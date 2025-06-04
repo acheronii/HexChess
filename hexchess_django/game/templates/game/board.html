@@ -1,0 +1,18 @@
+
+<form action="{% url 'game:move_piece' %}" method="post">
+{% csrf_token %}
+<fieldset>
+    <input type="submit", value="Move">
+
+    {% if error_message %}<p><strong> {{ error_message }} </strong></p> <br>{% endif %}
+    {% if change_message %}<p><strong> {{ change_message }} </strong></p> <br>{% endif %}
+
+    <svg id="board"...>
+        {% for tile in board %}
+            <polygon
+                points="{{tile.points}}"
+                style="fill:{{tile.color}};" />
+        {% endfor %}
+    </svg>
+</fieldset>
+</form>
