@@ -1,7 +1,7 @@
 import math
 
-from hex import Hex
-from piece import *
+from .hex import Hex
+from .piece import *
 
 """
 Represents the start state as a list of pieces on the board at the start
