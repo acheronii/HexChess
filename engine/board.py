@@ -94,10 +94,9 @@ class Board:
                 self.__unselect_piece()
                 self.move_piece(tile, (q, r))
                 self.__next_turn()
-                return
+                return True # return true since we changed turns
             if not tile.piece:
                 self.__unselect_piece()
-                return
             # if we clicked on another owned piece, select it instead
             if tile.piece.color == self.turn:
                 self.__unselect_piece()
@@ -110,6 +109,7 @@ class Board:
         # if we don't have a selected hex, and the hex we clicked on is selectable, select it
         elif tile.piece and tile.piece.color == self.turn:
             self.__select_piece(q, r)
+        return False # return false since we did not change turns
 
     def __unselect_piece(self):
         self.selected_hex.selected = False
@@ -388,10 +388,8 @@ class Board:
     def __calculate_points(self, tile: Hex):
         sqrt3 = math.sqrt(3)
         # First calculate the center of a hex
-        center_x = 1.5 * self.size * tile.q + self.board_center[0]
-        center_y = sqrt3 * self.size * (tile.r + tile.q / 2) + self.board_center[1]
-        tile.center_x = center_x
-        tile.center_y = center_y
+        center_x = self.board_center[0] + 1.5 * self.size * tile.q
+        center_y = self.board_center[1] - sqrt3 * self.size * (tile.r + tile.q / 2)
         # calculate the points, self.size is the distance from the center
         points = []
         for i in range(6):
@@ -400,24 +398,46 @@ class Board:
                 f"{center_x + self.size * math.cos(angle)},\
                           {center_y + self.size * math.sin(angle)}"
             )
+        tile.center_x = center_x
+        tile.center_y = center_y
         tile.points = " ".join(points)
+        
+        # repeat with flipped board
+        # calculate center of hex
+        center_x_flip = self.board_center[0] - 1.5 * self.size * tile.q
+        center_y_flip = self.board_center[1] + sqrt3 * self.size * (tile.r + tile.q / 2)
+        # calculate points, with self.size as distance from center
+        points_flipped = []
+        for i in range(6):
+            angle = i * math.pi / 3
+            points_flipped.append(
+                f"{center_x_flip + self.size * math.cos(angle)},\
+                          {center_y_flip + self.size * math.sin(angle)}"
+            )
+        tile.center_x_flip = center_x_flip
+        tile.center_y_flip = center_y_flip
+        tile.points_flipped = " ".join(points_flipped)
 
-    def as_json(self):
+    def as_json(self, flipped):
         """
         Output a JSON representation of the board state.
         """
         state = []
         for tile in self.hexes:
             piece = tile.piece
+            x = tile.center_x_flip - self.size / 2 if flipped else tile.center_x - self.size / 2
+            y = tile.center_y_flip - self.size / 2 if flipped else tile.center_y - self.size / 2
+            points = tile.points_flipped if flipped else tile.points
+
             state.append(
                 {
                     "q": tile.q,
                     "r": tile.r,
-                    "x": tile.center_x - self.size / 2,
-                    "y": tile.center_y - self.size / 2,
+                    "x": x,
+                    "y": y,
                     "piece": (piece.piece_type, piece.color) if piece else None,
                     "piece_path": piece.image_ref if piece else None,
-                    "points": tile.points,
+                    "points": points,
                     "color": tile.color,
                     "selected": tile.selected,
                     "highlighted": tile.highlighted,
