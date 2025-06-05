@@ -282,12 +282,30 @@ class Board:
         return out
 
     def __is_under_threat(self, q, r, color):
-        check = self.__get_moves_knight(q, r, color)
-        check += self.__get_moves_queen(q, r, color)
-        check += self.__get_moves_pawn(q, r, color)
-        for tile in check:
-            if tile.piece and tile.piece.color != color:
+        # check for knights
+        for tile in self.__get_moves_knight(q, r, color):
+            if tile.piece and tile.piece.color != color and type(tile.piece) == Knight:
                 return True
+        # check for queens/rooks
+        for tile in self.__get_moves_rook(q, r, color):
+            if tile.piece and tile.piece.color != color and \
+                (type(tile.piece) == Queen or type(tile.piece) == Rook):
+                return True
+        # check for queens/bishops
+        for tile in self.__get_moves_bishop(q, r, color):
+            if tile.piece and tile.piece.color != color and \
+                (type(tile.piece) == Queen or type(tile.piece) == Bishop):
+                return True
+        # check for pawns
+        if color == 1:
+            pawn_checks = [self.get_hex(q-1, r), self.get_hex(q+1, r-1)]
+        else:
+            pawn_checks = [self.get_hex(q-1, r+1), self.get_hex(q+1, r)]
+        for tile in pawn_checks:
+            if tile and tile.piece and tile.piece.color != color and \
+                type(tile.piece) == Pawn:
+                return True
+
         return False
     
     def move_piece(self, fro:tuple, to:tuple):
