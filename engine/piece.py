@@ -1,5 +1,3 @@
-from enum import Enum
-
 VALID_TYPES = [
     "Rook", "R", "r",
     "Knight", "N", "n",

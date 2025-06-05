@@ -1,12 +1,8 @@
-from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
 from django.template import loader
 
-import sys
-
-sys.path.append("C:/Users/jchur/Desktop/Code/HexChessProject/src")
-from board import Board
+from engine.board import Board
 
 # Create your views here.
 
@@ -30,5 +26,6 @@ def reset_board(request):
     return HttpResponseRedirect(reverse("game:game_page"))
 
 def flip_board(request):
+    raise NotImplementedError("achii has not done this yeet")
     board.flip()
     return HttpResponseRedirect(reverse("game:game_page"))
