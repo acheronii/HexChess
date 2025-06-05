@@ -22,33 +22,29 @@
 
 <svg id="board" width="100vw" height="100vh" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg" style="display:block; background:#f0f0f0;">
     {% for tile in board %}
+        <polygon
+            points="{{tile.points}}"
+            style="fill:{{tile.color}};stroke:black;stroke-width:2" 
+            id="{{ tile.q }} {{ tile.r }}"
+            onclick="submit_click(this)"
+        />
+        {% comment %} Change to be a better way to see if a tile is selected {% endcomment %}
         {% if tile.selected %}
             <polygon
                 points="{{tile.points}}"
-                style="fill:green;stroke:black;stroke-width:3" 
-                id="{{ tile.q }} {{ tile.r }}"
-                onclick="submit_click(this)"
+                style="fill:green;stroke:black;stroke-width:3"
+                styke="pointer-events: none;"
             />
-        {% elif tile.highlighted %}
-            <polygon
-                points="{{tile.points}}"
-                style="fill:darkgreen;stroke:black;stroke-width:3" 
-                id="{{ tile.q }} {{ tile.r }}"
-                onclick="submit_click(this)"
-            />
-        {% else %}
-            <polygon
-                points="{{tile.points}}"
-                style="fill:{{tile.color}};stroke:black;stroke-width:3" 
-                id="{{ tile.q }} {{ tile.r }}"
-                onclick="submit_click(this)"
-            />
-        {% endif %}
+        {% endif %} 
         {% if tile.piece %}
             {% with 'game/assets/'|add:tile.piece_path as image_path%}
-                <image href="{% static image_path %}" x="{{ tile.x }}" y="{{ tile.y }}" width="30" style="pointer-events: none;"/>
+                <image href="{% static image_path %}" x="{{ tile.piece_x }}" y="{{ tile.piece_y }}" width="30" style="pointer-events: none;"/>
             {% endwith %}
         {% endif %}
+        {% if tile.highlighted %}
+            <circle cx="{{tile.center_x}}" cy="{{tile.center_y}}" r="10" fill="black" fill-opacity="0.5" style="pointer-events: none;"/>
+        {% endif %}
+
     {% endfor %}
 </svg>
 
@@ -56,7 +52,6 @@
 
 {% comment %} 
 TODO 
-- add reset game and flip board buttons
 - add some kind of check notification
 {% endcomment %}
 
