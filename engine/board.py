@@ -57,6 +57,7 @@ class Board:
     """
 
     def __init__(self, radius: int = 5, initial_state=None, size=30, center=(400, 400)):
+        self.size = None
         if initial_state is None:
             initial_state = START_STATE
 
@@ -263,7 +264,7 @@ class Board:
         return out
 
     def __get_moves_pawn(self, q, r, color):
-        "TODO: implement en passant is we i want to"
+        """TODO: implement en passant is we i want to"""
         white_start_hexes = [
             (-4, -1),
             (-3, -1),
@@ -407,16 +408,15 @@ class Board:
         """
         state = []
         for tile in self.hexes:
+            piece = tile.piece
             state.append(
                 {
                     "q": tile.q,
                     "r": tile.r,
                     "x": tile.center_x - self.size / 2,
                     "y": tile.center_y - self.size / 2,
-                    "piece": (tile.piece.piece_type, tile.piece.color)
-                    if tile.piece
-                    else None,
-                    "piece_path": tile.piece.image_ref if tile.piece else None,
+                    "piece": (piece.piece_type, piece.color) if piece else None,
+                    "piece_path": piece.image_ref if piece else None,
                     "points": tile.points,
                     "color": tile.color,
                     "selected": tile.selected,
