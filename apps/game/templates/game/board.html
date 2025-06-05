@@ -28,11 +28,10 @@
             id="{{ tile.q }} {{ tile.r }}"
             onclick="submit_click(this)"
         />
-        {% comment %} Change to be a better way to see if a tile is selected {% endcomment %}
         {% if tile.selected %}
             <polygon
                 points="{{tile.points}}"
-                style="fill:green;stroke:black;stroke-width:3"
+                style="fill:black;fill-opacity:0.4;stroke:black;stroke-width:2"
                 styke="pointer-events: none;"
             />
         {% endif %} 
