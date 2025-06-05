@@ -1,7 +1,7 @@
 {% load static %}
-<style>
-    p { text-align: center;} 
-</style>
+
+<link rel="stylesheet" href="{% static 'game/style.css' %}">
+
 
 <form id="click_form" method="POST" action="{% url 'game:click' %}" style="display:none;">
     {% csrf_token %}
