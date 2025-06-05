@@ -143,7 +143,7 @@ class Board:
         piece = self.get_hex(q, r).piece
         if not piece:  # no moves for an empty hex
             return []
-        match type(piece):
+        match piece:
             case Rook():
                 return self.__get_moves_rook(q, r, piece.color)
             case Knight():
