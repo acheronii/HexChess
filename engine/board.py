@@ -98,7 +98,7 @@ class Board:
             if not tile.piece:
                 self.__unselect_piece()
             # if we clicked on another owned piece, select it instead
-            if tile.piece.color == self.turn:
+            elif tile.piece.color == self.turn:
                 self.__unselect_piece()
                 self.__select_piece(q, r)
             # if we clicked on a hex that we cant move to and we cant select,
@@ -425,16 +425,20 @@ class Board:
         state = []
         for tile in self.hexes:
             piece = tile.piece
-            x = tile.center_x_flip - self.size / 2 if flipped else tile.center_x - self.size / 2
-            y = tile.center_y_flip - self.size / 2 if flipped else tile.center_y - self.size / 2
+            center_x = tile.center_x_flip if flipped else tile.center_x
+            center_y = tile.center_y_flip if flipped else tile.center_y
+            x = center_x- self.size / 2
+            y = center_y - self.size / 2
             points = tile.points_flipped if flipped else tile.points
 
             state.append(
                 {
                     "q": tile.q,
                     "r": tile.r,
-                    "x": x,
-                    "y": y,
+                    "center_x": center_x,
+                    "center_y": center_y,
+                    "piece_x": x,
+                    "piece_y": y,
                     "piece": (piece.piece_type, piece.color) if piece else None,
                     "piece_path": piece.image_ref if piece else None,
                     "points": points,
