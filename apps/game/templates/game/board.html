@@ -1,0 +1,71 @@
+{% load static %}
+<style>
+    p { text-align: center;} 
+</style>
+
+<form id="click_form" method="POST" action="{% url 'game:click' %}" style="display:none;">
+    {% csrf_token %}
+    <input type="hidden" name="tile_id" id="tile_input">
+</form>
+
+<form id="reset_form" method="POST" action="{% url 'game:reset' %}">
+    {% csrf_token %}
+    <input type="submit" value="Reset Board">
+</form>
+
+<form id="flip_form" method="POST" action="{% url 'game:flip' %}">
+    {% csrf_token %}
+    <input type="submit" value="Flip Board">
+</form>
+
+<p> {{turn}} </p>
+
+<svg id="board" width="100vw" height="100vh" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg" style="display:block; background:#f0f0f0;">
+    {% for tile in board %}
+        {% if tile.selected %}
+            <polygon
+                points="{{tile.points}}"
+                style="fill:green;stroke:black;stroke-width:3" 
+                id="{{ tile.q }} {{ tile.r }}"
+                onclick="submit_click(this)"
+            />
+        {% elif tile.highlighted %}
+            <polygon
+                points="{{tile.points}}"
+                style="fill:darkgreen;stroke:black;stroke-width:3" 
+                id="{{ tile.q }} {{ tile.r }}"
+                onclick="submit_click(this)"
+            />
+        {% else %}
+            <polygon
+                points="{{tile.points}}"
+                style="fill:{{tile.color}};stroke:black;stroke-width:3" 
+                id="{{ tile.q }} {{ tile.r }}"
+                onclick="submit_click(this)"
+            />
+        {% endif %}
+        {% if tile.piece %}
+            {% with 'game/assets/'|add:tile.piece_path as image_path%}
+                <image href="{% static image_path %}" x="{{ tile.x }}" y="{{ tile.y }}" width="30" style="pointer-events: none;"/>
+            {% endwith %}
+        {% endif %}
+    {% endfor %}
+</svg>
+
+
+
+{% comment %} 
+TODO 
+- add reset game and flip board buttons
+- add some kind of check notification
+{% endcomment %}
+
+<script>
+    function submit_click(element) {
+      const tile_id = element.getAttribute("id");
+      const input = document.getElementById("tile_input");
+      input.value = tile_id;
+  
+      document.getElementById("click_form").submit();
+    }
+</script>
