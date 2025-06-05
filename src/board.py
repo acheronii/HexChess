@@ -3,8 +3,6 @@ import math
 from hex import Hex
 from piece import *
 
-TESTING = True
-
 """
 Represents the start state as a list of pieces on the board at the start
 each piece is represented as (q, r, s, type, color)
@@ -51,25 +49,6 @@ START_STATE = {
     (-2, 5): ("N", 1),
 }
 
-"""
-Add HEX_DIRECTIONS["{direction}"] to a hex to get the coordinates of the 
-hex that should be in that direction of it
-"""
-HEX_DIRECTIONS = {
-    "North": Hex(0, 1),
-    "South": Hex(0, -1),
-    "Northwest": Hex(-1, 1),
-    "Southeast": Hex(1, -1),
-    "Northeast": Hex(1, 0),
-    "Southwest": Hex(-1, 0)
-}
-
-
-MAROON_HEXES = []
-
-NAVAJO_HEXES = []
-
-GRAY_HEXES = []
 
 class Board:
     """
