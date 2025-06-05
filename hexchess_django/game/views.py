@@ -14,8 +14,21 @@ board = Board()
 
 def board_view(request):
     template = loader.get_template("game/board.html")
-    context = {"board": board.as_json()}
+    context = {"board": board.as_json(),
+               "turn": "White" if board.turn == 0 else "Black"
+               }
     return HttpResponse(template.render(context, request))
+
+def on_click(request):
+
+    tile_id = request.POST.get('tile_id').split()
+    board.on_click(int(tile_id[0]), int(tile_id[1]))
+    template = loader.get_template("game/board.html")
+    context = {"board": board.as_json(),
+               "turn": "White" if board.turn == 0 else "Black"
+               }
+    return HttpResponse(template.render(context, request))
+
 
 def move_piece(request):    
     template = loader.get_template("game/board.html")

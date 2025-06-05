@@ -1,18 +1,61 @@
+{% load static %}
+<style>
+    p { text-align: center;} 
+</style>
 
-<form action="{% url 'game:move_piece' %}" method="post">
-{% csrf_token %}
-<fieldset>
-    <input type="submit", value="Move">
+<form id="click_form" method="POST" action="{% url 'game:click' %}" style="display:none;">
+    {% csrf_token %}
+    <input type="hidden" name="tile_id" id="tile_input">
+</form>
 
-    {% if error_message %}<p><strong> {{ error_message }} </strong></p> <br>{% endif %}
-    {% if change_message %}<p><strong> {{ change_message }} </strong></p> <br>{% endif %}
+{% if error_message %}<p><strong> {{ error_message }} </strong></p> <br>{% endif %}
+{% if change_message %}<p><strong> {{ change_message }} </strong></p> <br>{% endif %}
 
-    <svg id="board"...>
-        {% for tile in board %}
+<p> {{turn}} </p>
+
+<svg id="board" width="100vw" height="100vh" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg" style="display:block; background:#f0f0f0;">
+    {% for tile in board %}
+        {% if tile.selected %}
             <polygon
                 points="{{tile.points}}"
-                style="fill:{{tile.color}};" />
-        {% endfor %}
-    </svg>
-</fieldset>
-</form>
+                style="fill:green;stroke:black;stroke-width:3" 
+                id="{{ tile.q }} {{ tile.r }}"
+                onclick="submit_click(this)"
+            />
+        {% elif tile.highlighted %}
+            <polygon
+                points="{{tile.points}}"
+                style="fill:darkgreen;stroke:black;stroke-width:3" 
+                id="{{ tile.q }} {{ tile.r }}"
+                onclick="submit_click(this)"
+            />
+        {% else %}
+            <polygon
+                points="{{tile.points}}"
+                style="fill:{{tile.color}};stroke:black;stroke-width:3" 
+                id="{{ tile.q }} {{ tile.r }}"
+                onclick="submit_click(this)"
+            />
+        {% endif %}
+        {% if tile.piece %}
+            {% with 'game/assets/'|add:tile.piece_path as image_path%}
+                <image href="{% static image_path %}" x="{{ tile.x }}" y="{{ tile.y }}" width="30" style="pointer-events: none;"/>
+            {% endwith %}
+        {% endif %}
+    {% endfor %}
+</svg>
+{% comment %} 
+TODO 
+- add reset game and flip board buttons
+- add some kind of check notification
+{% endcomment %}
+
+<script>
+    function submit_click(element) {
+      const tile_id = element.getAttribute("id");
+      const input = document.getElementById("tile_input");
+      input.value = tile_id;
+  
+      document.getElementById("click_form").submit();
+    }
+</script>

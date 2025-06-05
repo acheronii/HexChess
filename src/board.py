@@ -1,3 +1,4 @@
+import math
 
 from hex import Hex
 from piece import *
@@ -63,9 +64,12 @@ HEX_DIRECTIONS = {
     "Southwest": Hex(-1, 0)
 }
 
-"""
-TODO: implement checking behavior
-"""
+
+MAROON_HEXES = []
+
+NAVAJO_HEXES = []
+
+GRAY_HEXES = []
 
 class Board:
     """
@@ -73,7 +77,7 @@ class Board:
     Default radius of 5, gamestate of the standard start state 
     Will contain a set of methods for finding adjacent hexes and such
     """
-    def __init__(self, radius:int=5, initial_state=START_STATE):
+    def __init__(self, radius:int=5, initial_state=START_STATE, size=30, center=(400, 400)):
         hexes = []
         for q in range(-radius, radius + 1):
             for r in range(-radius, radius + 1):
@@ -86,12 +90,58 @@ class Board:
                     if key in initial_state:
                         piece_type, color = initial_state[key]
                         piece = make_piece(piece_type, color)
-                    hexes.append(Hex(q, r, s, piece))
+                    color = (r - q) % 3 
+                    hexes.append(Hex(q, r, s, piece, color))
         self.hexes = hexes
+        self.board_center = center
+        self.set_size(size)
         self.selected_hex = None
         self.turn = 0
 
-    def get_hex(self, q:int, r:int):
+    def on_click(self, q:int, r:int):
+        # get the hex that was clicked on
+        tile = self.get_hex(q, r)
+
+        # if we have a hex selected, check if we can move the piece
+        #  to the clicked on tile
+        if self.selected_hex:
+            # if we can move the piece to this hex, do it and swap turns
+            if tile in self.get_legal_moves(self.selected_hex.q, self.selected_hex.r):
+                tile = (self.selected_hex.q, self.selected_hex.r)
+                self.__unselect_piece()
+                self.move_piece(tile, (q, r))
+                self.__next_turn()
+                return
+            if not tile.piece:
+                self.__unselect_piece()
+                return
+            # if we clicked on another owned piece, select it instead
+            if tile.piece.color == self.turn:
+                self.__unselect_piece()
+                self.__select_piece(q, r)
+            # if we clicked on a hex that we cant move to and we cant select,
+            # just unselect what we have selected
+            else:
+                self.__unselect_piece()
+
+        # if we dont have a selected hex, and the hex we clicked on is 
+        # is selectable, select it
+        elif tile.piece and tile.piece.color == self.turn:
+                self.__select_piece(q, r)
+
+    def __unselect_piece(self):
+        self.selected_hex.selected = False
+        for tile in self.get_legal_moves(self.selected_hex.q, self.selected_hex.r):
+            tile.highlighted = False
+        self.selected_hex = None
+
+    def __select_piece(self, q, r):
+        self.selected_hex = self.get_hex(q, r)
+        for tile in self.get_legal_moves(self.selected_hex.q, self.selected_hex.r):
+            tile.highlighted = True
+        self.selected_hex.selected = True
+
+    def get_hex(self, q:int, r:int) -> Hex:
         """
         Returns the hex at the given q, r coordinate, 
         or None if it is out of bounds.
@@ -101,10 +151,7 @@ class Board:
                 return hex
         return None
 
-    def select_hex(self, q:int, r:int):
-        self.selected_hex = self.get_hex(q, r)
-
-    def next_turn(self):
+    def __next_turn(self):
         self.turn = 1 if self.turn == 0 else 0
 
     def get_legal_moves(self, q:int, r:int):
@@ -183,8 +230,8 @@ class Board:
     def __get_moves_queen(self, q, r, color):
         # just combine the rook and bishop
         out = []
-        out.append(self.__get_moves_bishop(q, r, color))
-        out.append(self.__get_moves_rook(q, r, color))
+        out += self.__get_moves_bishop(q, r, color)
+        out += self.__get_moves_rook(q, r, color)
         return out
 
     def __get_moves_king(self, q, r, color):
@@ -196,10 +243,13 @@ class Board:
             dest:Hex = self.get_hex(q + move[0], r + move[1])
             # if the destination is in bounds and no piece there, add it the hex
             # if there is an enemy piece, add it
-            if  dest: 
-                if not dest.piece and not self.is_under_threat(dest.piece.q, dest.piece.r):
+            if dest: 
+                if self.__is_under_threat(dest.q, dest.r, color):
+                    continue
+                if not dest.piece:
                     out.append(dest)
-                elif dest.piece and dest.piece.color != color:
+                    continue
+                if dest.piece.color != color:
                     out.append(dest)
         return out
 
@@ -252,13 +302,12 @@ class Board:
 
         return out
 
-    def is_under_threat(self, q, r, color):
-        check = []
-        check.append(self.__get_moves_knight(q, r, color))
-        check.append(self.__get_moves_queen(q, r, color))
-        check.append(self.__get_moves_pawn(q, r, color))
+    def __is_under_threat(self, q, r, color):
+        check = self.__get_moves_knight(q, r, color)
+        check += self.__get_moves_queen(q, r, color)
+        check += self.__get_moves_pawn(q, r, color)
         for tile in check:
-            if tile.piece.color != color:
+            if tile.piece and tile.piece.color != color:
                 return True
         return False
     
@@ -276,9 +325,25 @@ class Board:
         hex_start.set_piece(None)
         return True
 
-    def calculate_points(self, tile:Hex):
-        return ""
+    def set_size(self, new_size:int):
+        self.size = new_size
+        for tile in self.hexes:
+            self.__calculate_points(tile)
 
+    def __calculate_points(self, tile:Hex):
+        sqrt3 = math.sqrt(3)
+        # First calculate the center of a hex 
+        center_x = 1.5 * self.size * tile.q + self.board_center[0]
+        center_y = sqrt3 * self.size * (tile.r + tile.q / 2) + self.board_center[1]
+        tile.center_x = center_x
+        tile.center_y = center_y
+        # calculate the points, self.size is the distance from the center
+        points = []
+        for i in range(6):
+            angle =  i * math.pi / 3 
+            points.append(f"{center_x + self.size * math.cos(angle)},\
+                          {center_y + self.size * math.sin(angle)}")
+        tile.points = " ".join(points)
 
     def as_json(self):
         """
@@ -289,8 +354,13 @@ class Board:
             state.append({
                 "q": tile.q,
                 "r": tile.r,
+                "x": tile.center_x - self.size/2,
+                "y": tile.center_y - self.size/2,
                 "piece": (tile.piece.piece_type, tile.piece.color) if tile.piece else None,
-                "points": self.calculate_points(tile),
-                "color": tile.color
+                "piece_path": tile.piece.image_ref if tile.piece else None,
+                "points": tile.points,
+                "color": tile.color,
+                "selected": tile.selected,
+                "highlighted": tile.highlighted
             })
         return state
