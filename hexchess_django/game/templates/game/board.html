@@ -8,8 +8,15 @@
     <input type="hidden" name="tile_id" id="tile_input">
 </form>
 
-{% if error_message %}<p><strong> {{ error_message }} </strong></p> <br>{% endif %}
-{% if change_message %}<p><strong> {{ change_message }} </strong></p> <br>{% endif %}
+<form id="reset_form" method="POST" action="{% url 'game:reset' %}">
+    {% csrf_token %}
+    <input type="submit" value="Reset Board">
+</form>
+
+<form id="flip_form" method="POST" action="{% url 'game:flip' %}">
+    {% csrf_token %}
+    <input type="submit" value="Flip Board">
+</form>
 
 <p> {{turn}} </p>
 
@@ -44,6 +51,9 @@
         {% endif %}
     {% endfor %}
 </svg>
+
+
+
 {% comment %} 
 TODO 
 - add reset game and flip board buttons
