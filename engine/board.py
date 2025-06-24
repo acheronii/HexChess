@@ -49,6 +49,15 @@ START_STATE = {
 }
 
 
+"""
+TODO:
+    write a check for moving a piece such that you are now in check. 
+    probably make a checking board that this refers to, which duplicates what we have and
+    then makes the move and then checks if the king of the side that just moved is in check
+    do this for each move in get_legal_moves().
+"""
+
+
 class Board:
     """
     A class with a set of hexes for the board
@@ -94,7 +103,7 @@ class Board:
                 self.__unselect_piece()
                 self.move_piece(tile, (q, r))
                 self.__next_turn()
-                return True # return true since we changed turns
+                return True  # return true since we changed turns
             if not tile.piece:
                 self.__unselect_piece()
             # if we clicked on another owned piece, select it instead
@@ -109,7 +118,7 @@ class Board:
         # if we don't have a selected hex, and the hex we clicked on is selectable, select it
         elif tile.piece and tile.piece.color == self.turn:
             self.__select_piece(q, r)
-        return False # return false since we did not change turns
+        return False  # return false since we did not change turns
 
     def __unselect_piece(self):
         self.selected_hex.selected = False
@@ -401,7 +410,7 @@ class Board:
         tile.center_x = center_x
         tile.center_y = center_y
         tile.points = " ".join(points)
-        
+
         # repeat with flipped board
         # calculate center of hex
         center_x_flip = self.board_center[0] - 1.5 * self.size * tile.q
@@ -427,7 +436,7 @@ class Board:
             piece = tile.piece
             center_x = tile.center_x_flip if flipped else tile.center_x
             center_y = tile.center_y_flip if flipped else tile.center_y
-            x = center_x- self.size / 2
+            x = center_x - self.size / 2
             y = center_y - self.size / 2
             points = tile.points_flipped if flipped else tile.points
 
