@@ -1,4 +1,6 @@
 import math
+import copy
+from pprint import pprint
 
 from .hex import Hex
 from .piece import make_piece, Rook, Knight, Bishop, Queen, King, Pawn
@@ -49,15 +51,6 @@ START_STATE = {
 }
 
 
-"""
-TODO:
-    write a check for moving a piece such that you are now in check. 
-    probably make a checking board that this refers to, which duplicates what we have and
-    then makes the move and then checks if the king of the side that just moved is in check
-    do this for each move in get_legal_moves().
-"""
-
-
 class Board:
     """
     A class with a set of hexes for the board
@@ -89,13 +82,20 @@ class Board:
         self.set_size(size)
         self.selected_hex = None
         self.turn = 0
+        self.kings = [(1, -5), (1, 4)]
+
+        self.game_over = False
+        # mark as 0 for white, 1 for black, -1 for stalemate
+        self.winner = None
+
+        self.calculate_legal_moves()
 
     def on_click(self, q: int, r: int):
         # get the hex that was clicked on
         tile = self.get_hex(q, r)
 
         # if we have a hex selected, check if we can move the piece
-        #  to the clicked on tile
+        # to the clicked on tile
         if self.selected_hex:
             # if we can move the piece to this hex, do it and swap turns
             if tile in self.get_legal_moves(self.selected_hex.q, self.selected_hex.r):
@@ -143,9 +143,61 @@ class Board:
         return None
 
     def __next_turn(self):
+        self.calculate_legal_moves()
         self.turn = 1 if self.turn == 0 else 0
 
     def get_legal_moves(self, q: int, r: int):
+        hex = self.get_hex(q, r)
+        return hex.legal_moves
+
+    def calculate_legal_moves(self) -> None:
+        """
+        Calculate all of the legal moves for the board, including
+        accounting for check and checkmate.
+        if the king is in checkmate or stalemate, declare a winner by
+        setting fields
+        """
+        # track if a move exists
+        move_count = [0, 0]
+        move_exists = [False, False]
+        # check every hex
+        for hex in self.hexes:
+            hex.legal_moves = []
+            if not hex.piece:
+                continue
+            # for knowing which king to track
+            color = hex.piece.color
+            # get the possibly legal moves
+            moves = self.__get_psuedolegal_moves(hex.q, hex.r)
+            # for each of the moves, check if it would put the player in check using a deep copy
+            for move in moves:
+                simulated_board = copy.deepcopy(self)
+                simulated_board.move_piece((hex.q, hex.r), (move.q, move.r))
+
+                if simulated_board.is_under_threat(
+                    simulated_board.kings[color][0],
+                    simulated_board.kings[color][1],
+                    color,
+                ):
+                    continue
+                move_count[color] += 1
+                move_exists[color] = True
+                hex.legal_moves.append(move)
+
+        # if a move exists, just return none
+        if not move_exists[0] or not move_exists[1]:
+            self.game_over = True
+            # if there was no move, it's either checkmate or stalemate
+            if self.is_under_threat(
+                self.kings[self.turn][0], self.kings[self.turn][1], color
+            ):
+                # king is threatened, so it's checkmate
+                self.winner = self.turn
+            # king was not threatened, so it's stalemate
+            else:
+                self.winner = -1
+
+    def __get_psuedolegal_moves(self, q: int, r: int):
         """
         Given hex coordinates, give a list of hexes
         that are legal moves for the piece at the hex
@@ -263,7 +315,7 @@ class Board:
             # if the destination is in bounds and no piece there, add it the hex
             # if there is an enemy piece, add it
             if dest:
-                if self.__is_under_threat(dest.q, dest.r, color):
+                if self.is_under_threat(dest.q, dest.r, color):
                     continue
                 if not dest.piece:
                     out.append(dest)
@@ -338,7 +390,7 @@ class Board:
 
         return out
 
-    def __is_under_threat(self, q, r, color):
+    def is_under_threat(self, q, r, color):
         # check for knights
         for tile in self.__get_moves_knight(q, r, color):
             if tile.piece and tile.piece.color != color and type(tile.piece) is Knight:
@@ -382,9 +434,9 @@ class Board:
         """
         hex_start = self.get_hex(fro[0], fro[1])
         hex_end = self.get_hex(to[0], to[1])
-        # make sure we never try to move a piece illegally (should be checked by front end)
-        if hex_end not in self.get_legal_moves(hex_start.q, hex_start.r):
-            return False
+        # if we moved the king, we want to move the board remembering the kings location
+        if hex_start.piece.__class__ is King:
+            self.kings[hex_start.piece.color] = to
         hex_end.set_piece(hex_start.piece)
         hex_start.set_piece(None)
         return True
@@ -431,7 +483,7 @@ class Board:
         """
         Output a JSON representation of the board state.
         """
-        state = []
+        state = {"tiles": []}
         for tile in self.hexes:
             piece = tile.piece
             center_x = tile.center_x_flip if flipped else tile.center_x
@@ -440,7 +492,7 @@ class Board:
             y = center_y - self.size / 2
             points = tile.points_flipped if flipped else tile.points
 
-            state.append(
+            state["tiles"].append(
                 {
                     "q": tile.q,
                     "r": tile.r,
@@ -456,4 +508,7 @@ class Board:
                     "highlighted": tile.highlighted,
                 }
             )
+        state["state"] = {"over": self.game_over, "winner": self.winner}
+
+        pprint(state["state"])
         return state

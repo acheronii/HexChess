@@ -18,10 +18,22 @@
     <input type="submit" value="Flip Board">
 </form>
 
-<p> {{turn}} to move </p>
+<p> 
+    {% if board.state.over == True %}
+        {% if board.state.winner == 0 %}
+            White wins!
+        {% elif board.state.winner == 1 %}
+            Black wins!
+        {% else %}
+            Stalemate!
+        {% endif %}
+    {% else %}
+        {{turn}} to move 
+    {% endif %}
+</p>
 
 <svg id="board" width="100vw" height="100vh" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg" style="display:block; background:#f0f0f0;">
-    {% for tile in board %}
+    {% for tile in board.tiles %}
         <polygon
             points="{{tile.points}}"
             style="fill:{{tile.color}};stroke:black;stroke-width:2" 

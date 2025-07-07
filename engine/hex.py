@@ -27,6 +27,7 @@ class Hex:
         self.center_x_flip = None
         self.center_y_flip = None
         self.points_flipped = []
+        self.legal_moves = []
 
     def __add__(self, other):
         return Hex(self.q + other.q, self.r + other.r, self.s + other.s)
