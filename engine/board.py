@@ -1,6 +1,5 @@
 import math
 import copy
-from pprint import pprint
 
 from .hex import Hex
 from .piece import make_piece, Rook, Knight, Bishop, Queen, King, Pawn
@@ -91,6 +90,11 @@ class Board:
         self.calculate_legal_moves()
 
     def on_click(self, q: int, r: int):
+        """
+        On click method for when you click on a specific hex.
+        returns True if we have moved to the next turn, False otherwise.
+        """
+
         # get the hex that was clicked on
         tile = self.get_hex(q, r)
 
@@ -509,6 +513,4 @@ class Board:
                 }
             )
         state["state"] = {"over": self.game_over, "winner": self.winner}
-
-        pprint(state["state"])
         return state
