@@ -47,6 +47,11 @@ START_STATE = {
     (3, 2): ("R", 1),
     (2, 3): ("N", 1),
     (-2, 5): ("N", 1),
+    # misc gamestate data
+    "turn": 0,
+    "kings": [(1, -5), (1, 4)],
+    "over": False,
+    "winner": None,
 }
 
 
@@ -54,7 +59,7 @@ class Board:
     """
     A class with a set of hexes for the board
     Default radius of 5, gamestate of the standard start state
-    Will contain a set of methods for finding adjacent hexes and such
+    Contains a set of methods for making moves on the board
     """
 
     def __init__(self, radius: int = 5, initial_state=None, size=30, center=(400, 400)):
@@ -62,6 +67,7 @@ class Board:
         if initial_state is None:
             initial_state = START_STATE
 
+        # generate the hexes with given initial state
         hexes = []
         for q in range(-radius, radius + 1):
             for r in range(-radius, radius + 1):
@@ -77,17 +83,22 @@ class Board:
                     color = (r - q) % 3
                     hexes.append(Hex(q, r, s, piece, color))
         self.hexes = hexes
+
+        # get the initial state of these
+        self.turn = initial_state["turn"]
+        self.kings = initial_state["kings"]
+        self.game_over = initial_state["over"]
+
+        # mark as 0 for white, 1 for black, -1 for stalemate
+        self.winner = initial_state["winner"]
+
+        # based on factors other than the initial state
         self.board_center = center
         self.set_size(size)
         self.selected_hex = None
-        self.turn = 0
-        self.kings = [(1, -5), (1, 4)]
 
-        self.game_over = False
-        # mark as 0 for white, 1 for black, -1 for stalemate
-        self.winner = None
-
-        self.calculate_legal_moves()
+        # calculate the initial legal moves
+        self.__calculate_legal_moves()
 
     def on_click(self, q: int, r: int):
         """
@@ -102,7 +113,7 @@ class Board:
         # to the clicked on tile
         if self.selected_hex:
             # if we can move the piece to this hex, do it and swap turns
-            if tile in self.get_legal_moves(self.selected_hex.q, self.selected_hex.r):
+            if tile in self.__get_legal_moves(self.selected_hex):
                 tile = (self.selected_hex.q, self.selected_hex.r)
                 self.__unselect_piece()
                 self.move_piece(tile, (q, r))
@@ -126,13 +137,13 @@ class Board:
 
     def __unselect_piece(self):
         self.selected_hex.selected = False
-        for tile in self.get_legal_moves(self.selected_hex.q, self.selected_hex.r):
+        for tile in self.__get_legal_moves(self.selected_hex):
             tile.highlighted = False
         self.selected_hex = None
 
     def __select_piece(self, q, r):
         self.selected_hex = self.get_hex(q, r)
-        for tile in self.get_legal_moves(self.selected_hex.q, self.selected_hex.r):
+        for tile in self.__get_legal_moves(self.selected_hex):
             tile.highlighted = True
         self.selected_hex.selected = True
 
@@ -147,14 +158,13 @@ class Board:
         return None
 
     def __next_turn(self):
-        self.calculate_legal_moves()
+        self.__calculate_legal_moves()
         self.turn = 1 if self.turn == 0 else 0
 
-    def get_legal_moves(self, q: int, r: int):
-        hex = self.get_hex(q, r)
+    def __get_legal_moves(self, hex: Hex):
         return hex.legal_moves
 
-    def calculate_legal_moves(self) -> None:
+    def __calculate_legal_moves(self) -> None:
         """
         Calculate all of the legal moves for the board, including
         accounting for check and checkmate.
@@ -227,7 +237,7 @@ class Board:
                     f"{type(piece)}: is not an implemented Piece!"
                 )
 
-    def __get_moves_rook(self, q, r, color):
+    def __get_moves_rook(self, q, r, color) -> list[tuple[int, int]]:
         out = []
         # movement along files
         directions = [(0, 1), (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1)]
@@ -269,7 +279,7 @@ class Board:
                     out.append(dest)
         return out
 
-    def __get_moves_bishop(self, q, r, color):
+    def __get_moves_bishop(self, q, r, color) -> list[tuple[int, int]]:
         out = []
         directions = [(1, 1), (-1, 2), (-2, 1), (-1, -1), (1, -2), (2, -1)]
         # for each diagonal
@@ -290,14 +300,14 @@ class Board:
                 dest = self.get_hex(dest.q + move[0], dest.r + move[1])
         return out
 
-    def __get_moves_queen(self, q, r, color):
+    def __get_moves_queen(self, q, r, color) -> list[tuple[int, int]]:
         # just combine the rook and bishop
         out = []
         out += self.__get_moves_bishop(q, r, color)
         out += self.__get_moves_rook(q, r, color)
         return out
 
-    def __get_moves_king(self, q, r, color):
+    def __get_moves_king(self, q, r, color) -> list[tuple[int, int]]:
         out = []
         directions = [
             (0, 1),
@@ -328,7 +338,7 @@ class Board:
                     out.append(dest)
         return out
 
-    def __get_moves_pawn(self, q, r, color):
+    def __get_moves_pawn(self, q, r, color) -> list[tuple[int, int]]:
         """TODO: implement en passant is we i want to"""
         white_start_hexes = [
             (-4, -1),
@@ -394,7 +404,7 @@ class Board:
 
         return out
 
-    def is_under_threat(self, q, r, color):
+    def is_under_threat(self, q, r, color) -> bool:
         # check for knights
         for tile in self.__get_moves_knight(q, r, color):
             if tile.piece and tile.piece.color != color and type(tile.piece) is Knight:
@@ -431,7 +441,7 @@ class Board:
 
         return False
 
-    def move_piece(self, fro: tuple, to: tuple):
+    def move_piece(self, fro: tuple, to: tuple) -> None:
         """
         Move a piece from hex_start to hex_end. returns true if valid and false otherwise
         In practice this should always return true
@@ -443,14 +453,17 @@ class Board:
             self.kings[hex_start.piece.color] = to
         hex_end.set_piece(hex_start.piece)
         hex_start.set_piece(None)
-        return True
 
-    def set_size(self, new_size: int):
+    def set_size(self, new_size: int) -> None:
         self.size = new_size
         for tile in self.hexes:
             self.__calculate_points(tile)
 
-    def __calculate_points(self, tile: Hex):
+    def __calculate_points(self, tile: Hex) -> None:
+        """
+        Calculates where to place points for the hexes on the board,
+        stores those points in each hex
+        """
         sqrt3 = math.sqrt(3)
         # First calculate the center of a hex
         center_x = self.board_center[0] + 1.5 * self.size * tile.q
@@ -483,7 +496,7 @@ class Board:
         tile.center_y_flip = center_y_flip
         tile.points_flipped = " ".join(points_flipped)
 
-    def as_json(self, flipped):
+    def as_json(self, flipped) -> dict:
         """
         Output a JSON representation of the board state.
         """
@@ -514,3 +527,18 @@ class Board:
             )
         state["state"] = {"over": self.game_over, "winner": self.winner}
         return state
+
+    def as_gamestate(self) -> dict:
+        """
+        Output a json format readable gamestate that we can load a game using
+        """
+        gamestate = {}
+        for hex in self.hexes:
+            if hex.piece:
+                gamestate[(hex.q, hex.r)] = (hex.piece.piece_type, hex.piece.color)
+        gamestate["turn"] = self.turn
+        gamestate["winner"] = self.winner
+        gamestate["over"] = self.game_over
+        gamestate["kings"] = self.kings
+
+        return gamestate
