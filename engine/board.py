@@ -473,8 +473,6 @@ class Board:
                     "piece_path": piece.image_ref if piece else None,
                     "points": points,
                     "color": tile.color,
-                    "selected": tile.selected,
-                    "highlighted": tile.highlighted,
                 }
             )
         state["state"] = {"over": self.game_over, "winner": self.winner}
