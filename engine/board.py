@@ -83,7 +83,6 @@ class Board:
                     color = (r - q) % 3
                     hexes.append(Hex(q, r, s, piece, color))
         self.hexes = hexes
-
         # get the initial state of these
         self.turn = initial_state["turn"]
         self.kings = initial_state["kings"]
@@ -95,57 +94,10 @@ class Board:
         # based on factors other than the initial state
         self.board_center = center
         self.set_size(size)
-        self.selected_hex = None
 
         # calculate the initial legal moves
+        self.legal_moves = {}
         self.__calculate_legal_moves()
-
-    def on_click(self, q: int, r: int):
-        """
-        On click method for when you click on a specific hex.
-        returns True if we have moved to the next turn, False otherwise.
-        """
-
-        # get the hex that was clicked on
-        tile = self.get_hex(q, r)
-
-        # if we have a hex selected, check if we can move the piece
-        # to the clicked on tile
-        if self.selected_hex:
-            # if we can move the piece to this hex, do it and swap turns
-            if tile in self.__get_legal_moves(self.selected_hex):
-                tile = (self.selected_hex.q, self.selected_hex.r)
-                self.__unselect_piece()
-                self.move_piece(tile, (q, r))
-                self.__next_turn()
-                return True  # return true since we changed turns
-            if not tile.piece:
-                self.__unselect_piece()
-            # if we clicked on another owned piece, select it instead
-            elif tile.piece.color == self.turn:
-                self.__unselect_piece()
-                self.__select_piece(q, r)
-            # if we clicked on a hex that we cant move to and we cant select,
-            # just unselect what we have selected
-            else:
-                self.__unselect_piece()
-
-        # if we don't have a selected hex, and the hex we clicked on is selectable, select it
-        elif tile.piece and tile.piece.color == self.turn:
-            self.__select_piece(q, r)
-        return False  # return false since we did not change turns
-
-    def __unselect_piece(self):
-        self.selected_hex.selected = False
-        for tile in self.__get_legal_moves(self.selected_hex):
-            tile.highlighted = False
-        self.selected_hex = None
-
-    def __select_piece(self, q, r):
-        self.selected_hex = self.get_hex(q, r)
-        for tile in self.__get_legal_moves(self.selected_hex):
-            tile.highlighted = True
-        self.selected_hex.selected = True
 
     def get_hex(self, q: int, r: int) -> Hex | None:
         """
@@ -157,12 +109,9 @@ class Board:
                 return hex
         return None
 
-    def __next_turn(self):
-        self.__calculate_legal_moves()
+    def next_turn(self):
         self.turn = 1 if self.turn == 0 else 0
-
-    def __get_legal_moves(self, hex: Hex):
-        return hex.legal_moves
+        self.__calculate_legal_moves()
 
     def __calculate_legal_moves(self) -> None:
         """
@@ -171,42 +120,46 @@ class Board:
         if the king is in checkmate or stalemate, declare a winner by
         setting fields
         """
+        self.legal_moves = {}
+
         # track if a move exists
-        move_count = [0, 0]
-        move_exists = [False, False]
+        move_count = 0
         # check every hex
         for hex in self.hexes:
-            hex.legal_moves = []
             if not hex.piece:
                 continue
-            # for knowing which king to track
-            color = hex.piece.color
+            if hex.piece.color != self.turn:
+                continue
+
+            self.legal_moves[f"{hex.q} {hex.r}"] = []
+
             # get the possibly legal moves
             moves = self.__get_psuedolegal_moves(hex.q, hex.r)
+
             # for each of the moves, check if it would put the player in check using a deep copy
             for move in moves:
                 simulated_board = copy.deepcopy(self)
                 simulated_board.move_piece((hex.q, hex.r), (move.q, move.r))
 
                 if simulated_board.is_under_threat(
-                    simulated_board.kings[color][0],
-                    simulated_board.kings[color][1],
-                    color,
+                    simulated_board.kings[self.turn][0],
+                    simulated_board.kings[self.turn][1],
+                    self.turn,
                 ):
                     continue
-                move_count[color] += 1
-                move_exists[color] = True
-                hex.legal_moves.append(move)
+                move_count += 1
+                self.legal_moves[f"{hex.q} {hex.r}"] += [f"{move.q} {move.r}"]
 
         # if a move exists, just return none
-        if not move_exists[0] or not move_exists[1]:
+        if move_count == 0:
             self.game_over = True
             # if there was no move, it's either checkmate or stalemate
             if self.is_under_threat(
-                self.kings[self.turn][0], self.kings[self.turn][1], color
+                self.kings[self.turn][0], self.kings[self.turn][1], self.turn
             ):
                 # king is threatened, so it's checkmate
-                self.winner = self.turn
+                self.winner = 0 if self.turn == 1 else 1
+                print(self.winner)
             # king was not threatened, so it's stalemate
             else:
                 self.winner = -1
@@ -339,7 +292,6 @@ class Board:
         return out
 
     def __get_moves_pawn(self, q, r, color) -> list[tuple[int, int]]:
-        """TODO: implement en passant is we i want to"""
         white_start_hexes = [
             (-4, -1),
             (-3, -1),

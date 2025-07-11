@@ -5,7 +5,7 @@
 
 <form id="click_form" method="POST" action="{% url 'game:click' %}" style="display:none;">
     {% csrf_token %}
-    <input type="hidden" name="tile_id" id="tile_input">
+    <input type="hidden" name="move" id="move_input">
 </form>
 
 <form id="reset_form" method="POST" action="{% url 'game:reset' %}">
@@ -38,40 +38,116 @@
             points="{{tile.points}}"
             style="fill:{{tile.color}};stroke:black;stroke-width:2" 
             id="{{ tile.q }} {{ tile.r }}"
+            center-x="{{ tile.center_x }}"
+            center-y="{{ tile.center_y }}"
             onclick="submit_click(this)"
         />
-        {% if tile.selected %}
-            <polygon
-                points="{{tile.points}}"
-                style="fill:black;fill-opacity:0.6;stroke:black;stroke-width:2"
-                styke="pointer-events: none;"
-            />
-        {% endif %} 
         {% if tile.piece %}
             {% with 'game/assets/'|add:tile.piece_path as image_path%}
                 <image href="{% static image_path %}" x="{{ tile.piece_x }}" y="{{ tile.piece_y }}" width="30" style="pointer-events: none;"/>
             {% endwith %}
         {% endif %}
-        {% if tile.highlighted %}
-            <circle cx="{{tile.center_x}}" cy="{{tile.center_y}}" r="10" fill="black" fill-opacity="0.5" style="pointer-events: none;"/>
-        {% endif %}
-
     {% endfor %}
 </svg>
 
 
+<script id="legal_moves_data" type="application/json">
+    {{ legal_moves_json|safe }}
+</script>
 
-{% comment %} 
-TODO 
-- add some kind of check notification
-{% endcomment %}
 
 <script>
-    function submit_click(element) {
-      const tile_id = element.getAttribute("id");
-      const input = document.getElementById("tile_input");
-      input.value = tile_id;
-  
-      document.getElementById("click_form").submit();
+
+    let legal_moves = JSON.parse(document.getElementById("legal_moves_data").textContent);
+
+    let selected_tile = null;
+
+    function submit_click(element) {        
+        const tile_id = element.getAttribute("id");
+
+
+        if (selected_tile === null) {
+            
+            // if we selected an allied piece, highlight the moves
+            if (tile_id in legal_moves) {
+                selected_tile = tile_id;
+                highlight_moves(legal_moves[tile_id]);
+                highlight_selected(tile_id)
+            }
+        } else { 
+            // if we selected a legal move, move it
+            if (legal_moves[selected_tile].includes(tile_id)) {
+                const input = document.getElementById("move_input");
+                input.value = selected_tile + ">" + tile_id;
+                document.getElementById("click_form").submit();
+                clear_highlights();
+                selected_tile = null;
+            }
+            // selected a different allied piece
+            else if (tile_id in legal_moves) {
+                selected_tile = tile_id;
+                highlight_moves(legal_moves[tile_id]);
+                highlight_selected(tile_id)
+            }
+            // if the move isnt legal, clear the highlights
+            else {
+                clear_highlights();
+                selected_tile = null;
+            }
+        }
     }
+
+    function highlight_moves(moves) {
+        clear_highlights();
+        // for each tile id in the given moves
+        moves.forEach(tile_id => {
+            // get the actual tile
+            const tile = document.getElementById(tile_id);
+            if (tile) {
+                // change it's highlighting
+                const center_x = tile.getAttribute("center-x");
+                const center_y = tile.getAttribute("center-y");
+                
+                const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                dot.setAttribute("cx", center_x);
+                dot.setAttribute("cy", center_y);
+                dot.setAttribute("r", 10);
+                dot.setAttribute("fill", "black");
+                dot.setAttribute("fill-opacity", "0.5");
+                dot.setAttribute("pointer-events", "none");
+
+                dot.classList.add("highlight-dot");
+
+                board.appendChild(dot);
+            }
+        })
+
+    }
+
+    function highlight_selected(tile_id) {
+        const board = document.getElementById("board");
+        const tile = document.getElementById(tile_id);
+        if (tile) {
+            // add overlay for highlight
+            const selectedOverlay = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+            selectedOverlay.setAttribute("points", tile.getAttribute("points"));
+            selectedOverlay.setAttribute("fill", "black");
+            selectedOverlay.setAttribute("fill-opacity", "0.3");
+            selectedOverlay.setAttribute("stroke", "black");
+            selectedOverlay.setAttribute("stroke-width", "2");
+            selectedOverlay.setAttribute("pointer-events", "none");
+            
+            selectedOverlay.classList.add("selected-overlay");
+
+            board.appendChild(selectedOverlay);
+        }
+    }
+
+
+    function clear_highlights() {
+        document.querySelectorAll("polygon").forEach(tile => {
+            document.querySelectorAll(".selected-overlay, .highlight-dot").forEach(el => el.remove());
+        })
+    }
+
 </script>
