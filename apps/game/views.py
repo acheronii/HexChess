@@ -1,6 +1,6 @@
 import json
 
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 from django.template import loader
 from django.core.serializers.json import DjangoJSONEncoder
@@ -17,24 +17,11 @@ def board_view(request):
     template = loader.get_template("game/board.html")
     context = {
         "board": board.as_json(flipped),
+        "winner": board.winner,
         "turn": "White" if board.turn == 0 else "Black",
         "legal_moves_json": json.dumps(board.legal_moves, cls=DjangoJSONEncoder),
     }
     return HttpResponse(template.render(context, request))
-
-
-def on_click(request):
-    if request.method == "POST":
-        fro, to = request.POST.get("move").split(">")
-        # sanitize to make sure that we are only moving if the move is legal
-        if to in board.legal_moves[fro]:
-            # convert locations to ints
-            fro = [int(x) for x in fro.split()]
-            to = [int(x) for x in to.split()]
-            # move the piece
-            board.move_piece((int(fro[0]), int(fro[1])), (int(to[0]), int(to[1])))
-            board.next_turn()
-    return HttpResponseRedirect(reverse("game:game_page"))
 
 
 def reset_board(request):
@@ -48,3 +35,26 @@ def flip_board(request):
     flipped = request.session.get("flipped", False)
     request.session["flipped"] = not flipped
     return HttpResponseRedirect(reverse("game:game_page"))
+
+
+def ajax_move_view(request):
+    if request.method == "POST":
+        fro, to = request.POST.get("move").split(">")
+        # sanitize to make sure that we are only moving if the move is legal
+        if to in board.legal_moves[fro]:
+            # convert locations to ints
+            fro = [int(x) for x in fro.split("_")]
+            to = [int(x) for x in to.split("_")]
+            # move the piece
+            board.move_piece((int(fro[0]), int(fro[1])), (int(to[0]), int(to[1])))
+            board.next_turn()
+        return JsonResponse(
+            {
+                "winner": board.winner,
+                "turn": "White" if board.turn == 0 else "Black",
+                "legal_moves_json": json.dumps(
+                    board.legal_moves, cls=DjangoJSONEncoder
+                ),
+            }
+        )
+    return JsonResponse({"error": "Invalid Request"}, status=400)

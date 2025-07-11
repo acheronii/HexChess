@@ -2,12 +2,6 @@
 
 <link rel="stylesheet" href="{% static 'game/style.css' %}">
 
-
-<form id="click_form" method="POST" action="{% url 'game:click' %}" style="display:none;">
-    {% csrf_token %}
-    <input type="hidden" name="move" id="move_input">
-</form>
-
 <form id="reset_form" method="POST" action="{% url 'game:reset' %}">
     {% csrf_token %}
     <input type="submit" value="Reset Board">
@@ -18,36 +12,38 @@
     <input type="submit" value="Flip Board">
 </form>
 
-<p> 
-    {% if board.state.over == True %}
-        {% if board.state.winner == 0 %}
-            White wins!
-        {% elif board.state.winner == 1 %}
-            Black wins!
-        {% else %}
-            Stalemate!
-        {% endif %}
-    {% else %}
-        {{turn}} to move 
-    {% endif %}
+
+<p id="turn_disp">
+    {{ turn }} to move
 </p>
 
+
 <svg id="board" width="100vw" height="100vh" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg" style="display:block; background:#f0f0f0;">
+    <g id="board_group">
     {% for tile in board.tiles %}
         <polygon
             points="{{tile.points}}"
             style="fill:{{tile.color}};stroke:black;stroke-width:2" 
-            id="{{ tile.q }} {{ tile.r }}"
+            id="{{ tile.q }}_{{ tile.r }}"
             center-x="{{ tile.center_x }}"
             center-y="{{ tile.center_y }}"
+            piece-x="{{ tile.piece_x }}" 
+            piece-y="{{ tile.piece_y }}" 
             onclick="submit_click(this)"
         />
         {% if tile.piece %}
             {% with 'game/assets/'|add:tile.piece_path as image_path%}
-                <image href="{% static image_path %}" x="{{ tile.piece_x }}" y="{{ tile.piece_y }}" width="30" style="pointer-events: none;"/>
+                <image 
+                id="piece-{{ tile.q }}_{{tile.r}}"
+                href="{% static image_path %}" 
+                x="{{ tile.piece_x }}" 
+                y="{{ tile.piece_y }}" 
+                width="30" 
+                style="pointer-events: none;"/>
             {% endwith %}
         {% endif %}
     {% endfor %}
+    </g>
 </svg>
 
 
@@ -77,11 +73,76 @@
         } else { 
             // if we selected a legal move, move it
             if (legal_moves[selected_tile].includes(tile_id)) {
-                const input = document.getElementById("move_input");
-                input.value = selected_tile + ">" + tile_id;
-                document.getElementById("click_form").submit();
+                const move = selected_tile + ">" + tile_id;
+
+                // snap piece to new location
+
+
+
+
+                // get the piece we want to move and the target tile
+                const piece_id = `piece-${selected_tile}`;
+                const piece = document.getElementById(piece_id);
+                const target_tile = document.getElementById(tile_id);
+                
+                // if there is a piece there already, remove it
+                const piece_taken_id = `piece-${tile_id}`;
+                const piece_taken = document.getElementById(piece_taken_id);
+
+                if (piece_taken) {
+                    piece_taken.remove()
+                }
+
+                // snap piece to new location
+                const target_x = target_tile.getAttribute("piece-x");
+                const target_y = target_tile.getAttribute("piece-y");
+                piece.setAttribute("x", target_x);
+                piece.setAttribute("y", target_y);
+
+                // set piece's id to the new tile
+                piece.setAttribute("id", `piece-${tile_id}`)
+                // make sure piece stays at front
+                piece.parentNode.appendChild(piece)
+
+
+                // submit the move to backend
+                // document.getElementById("click_form").submit();
                 clear_highlights();
                 selected_tile = null;
+
+                // send move via ajax 
+                fetch("{% url 'game:ajax_move' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-CSRFToken": "{{ csrf_token }}",
+                    },
+                        body: "move=" + encodeURIComponent(move),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Move confirmed:", data);
+                    // update legal moves
+                    legal_moves = JSON.parse(data.legal_moves_json); 
+
+                    // update display at the top
+                    const turn_display = document.getElementById("turn_disp");
+                    if (data.winner === null) {
+                        turn_display.textContent = `${data.turn} to move`
+                    } else if (data.winner === 0) {
+                        turn_display.textContent = `White wins!`
+                    } else if (data.winner === 1) {
+                        turn_display.textContent = `Black wins!`
+                    } else {
+                        turn_display.textContent = `Stalemate!`
+                    }
+
+                })
+                .catch(error => {
+                    console.error("Move failed:", error);
+                });
+
+
             }
             // selected a different allied piece
             else if (tile_id in legal_moves) {

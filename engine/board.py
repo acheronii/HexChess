@@ -131,7 +131,7 @@ class Board:
             if hex.piece.color != self.turn:
                 continue
 
-            self.legal_moves[f"{hex.q} {hex.r}"] = []
+            self.legal_moves[f"{hex.q}_{hex.r}"] = []
 
             # get the possibly legal moves
             moves = self.__get_psuedolegal_moves(hex.q, hex.r)
@@ -148,7 +148,7 @@ class Board:
                 ):
                     continue
                 move_count += 1
-                self.legal_moves[f"{hex.q} {hex.r}"] += [f"{move.q} {move.r}"]
+                self.legal_moves[f"{hex.q}_{hex.r}"] += [f"{move.q}_{move.r}"]
 
         # if a move exists, just return none
         if move_count == 0:
@@ -159,7 +159,6 @@ class Board:
             ):
                 # king is threatened, so it's checkmate
                 self.winner = 0 if self.turn == 1 else 1
-                print(self.winner)
             # king was not threatened, so it's stalemate
             else:
                 self.winner = -1
