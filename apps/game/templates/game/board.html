@@ -14,7 +14,17 @@
 
 
 <p id="turn_disp">
-    {{ turn }} to move
+    {% if winner %}
+        {% if winner == 0 %}
+            White wins!
+        {% elif winner == 1 %}
+            Black wins!
+        {% else %}
+            Stalemate!
+        {% endif %}
+    {% else %}
+        {{ turn }} to move
+    {% endif %}
 </p>
 
 
@@ -74,21 +84,15 @@
             // if we selected a legal move, move it
             if (legal_moves[selected_tile].includes(tile_id)) {
                 const move = selected_tile + ">" + tile_id;
-
-                // snap piece to new location
-
-
-
+                const target_tile = document.getElementById(tile_id);
 
                 // get the piece we want to move and the target tile
                 const piece_id = `piece-${selected_tile}`;
                 const piece = document.getElementById(piece_id);
-                const target_tile = document.getElementById(tile_id);
                 
                 // if there is a piece there already, remove it
                 const piece_taken_id = `piece-${tile_id}`;
                 const piece_taken = document.getElementById(piece_taken_id);
-
                 if (piece_taken) {
                     piece_taken.remove()
                 }
@@ -105,8 +109,7 @@
                 piece.parentNode.appendChild(piece)
 
 
-                // submit the move to backend
-                // document.getElementById("click_form").submit();
+                // clear the previous highlights
                 clear_highlights();
                 selected_tile = null;
 
@@ -126,27 +129,27 @@
                     if (data.reload) {
                         location.reload(true);
                     }
-                    // update legal moves
-                    legal_moves = JSON.parse(data.legal_moves_json); 
+                    else {
+                        // update legal moves
+                        legal_moves = JSON.parse(data.legal_moves_json); 
 
-                    // update display at the top
-                    const turn_display = document.getElementById("turn_disp");
-                    if (data.winner === null) {
-                        turn_display.textContent = `${data.turn} to move`
-                    } else if (data.winner === 0) {
-                        turn_display.textContent = `White wins!`
-                    } else if (data.winner === 1) {
-                        turn_display.textContent = `Black wins!`
-                    } else {
-                        turn_display.textContent = `Stalemate!`
+                        // update display at the top
+                        const turn_display = document.getElementById("turn_disp");
+                        if (data.winner === null) {
+                            turn_display.textContent = `${data.turn} to move`
+                        } else if (data.winner === 0) {
+                            turn_display.textContent = `White wins!`
+                        } else if (data.winner === 1) {
+                            turn_display.textContent = `Black wins!`
+                        } else {
+                            turn_display.textContent = `Stalemate!`
+                        }
                     }
 
                 })
                 .catch(error => {
                     console.error("Move failed:", error);
                 });
-
-
             }
             // selected a different allied piece
             else if (tile_id in legal_moves) {
