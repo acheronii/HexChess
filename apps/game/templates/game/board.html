@@ -122,6 +122,10 @@
                 .then(response => response.json())
                 .then(data => {
                     console.log("Move confirmed:", data);
+
+                    if (data.reload) {
+                        location.reload(true);
+                    }
                     // update legal moves
                     legal_moves = JSON.parse(data.legal_moves_json); 
 

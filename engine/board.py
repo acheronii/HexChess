@@ -281,8 +281,6 @@ class Board:
             # if the destination is in bounds and no piece there, add it the hex
             # if there is an enemy piece, add it
             if dest:
-                if self.is_under_threat(dest.q, dest.r, color):
-                    continue
                 if not dest.piece:
                     out.append(dest)
                     continue
@@ -375,6 +373,10 @@ class Board:
                 and tile.piece.color != color
                 and (type(tile.piece) is Queen or type(tile.piece) is Bishop)
             ):
+                return True
+        # check for kings
+        for tile in self.__get_moves_king(q, r, color):
+            if tile.piece and tile.piece.color != color and (type(tile.piece) is King):
                 return True
         # check for pawns
         if color == 1:

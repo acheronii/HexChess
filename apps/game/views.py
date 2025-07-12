@@ -41,13 +41,15 @@ def ajax_move_view(request):
     if request.method == "POST":
         fro, to = request.POST.get("move").split(">")
         # sanitize to make sure that we are only moving if the move is legal
-        if to in board.legal_moves[fro]:
+        if fro in board.legal_moves.keys() and to in board.legal_moves[fro]:
             # convert locations to ints
             fro = [int(x) for x in fro.split("_")]
             to = [int(x) for x in to.split("_")]
             # move the piece
             board.move_piece((int(fro[0]), int(fro[1])), (int(to[0]), int(to[1])))
             board.next_turn()
+        else:
+            return JsonResponse({"reload": "True"}, status=200)
         return JsonResponse(
             {
                 "winner": board.winner,
