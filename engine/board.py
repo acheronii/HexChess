@@ -94,6 +94,7 @@ class Board:
         # based on factors other than the initial state
         self.board_center = center
         self.set_size(size)
+        self.check = None
 
         # calculate the initial legal moves
         self.legal_moves = {}
@@ -166,7 +167,7 @@ class Board:
     def __get_psuedolegal_moves(self, q: int, r: int):
         """
         Given hex coordinates, give a list of hexes
-        that are legal moves for the piece at the hex
+        that are pseudo-legal moves for the piece at the hex
         """
         piece = self.get_hex(q, r).piece
         if not piece:  # no moves for an empty hex
@@ -406,6 +407,11 @@ class Board:
             self.kings[hex_start.piece.color] = to
         hex_end.set_piece(hex_start.piece)
         hex_start.set_piece(None)
+        turn = 0 if self.turn == 1 else 1
+        if self.is_under_threat(self.kings[turn][0], self.kings[turn][1], turn):
+            self.check = f"{self.kings[turn][0]}_{self.kings[turn][1]}"
+        else:
+            self.check = None
 
     def set_size(self, new_size: int) -> None:
         self.size = new_size

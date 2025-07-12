@@ -130,6 +130,11 @@
                         location.reload(true);
                     }
                     else {
+                        clear_check();
+                        if (data.check) {
+                            highlight_check(data.check);
+                        }
+
                         // update legal moves
                         legal_moves = JSON.parse(data.legal_moves_json); 
 
@@ -201,8 +206,7 @@
             selectedOverlay.setAttribute("points", tile.getAttribute("points"));
             selectedOverlay.setAttribute("fill", "black");
             selectedOverlay.setAttribute("fill-opacity", "0.3");
-            selectedOverlay.setAttribute("stroke", "black");
-            selectedOverlay.setAttribute("stroke-width", "2");
+            selectedOverlay.setAttribute("stroke-width", "0");
             selectedOverlay.setAttribute("pointer-events", "none");
             
             selectedOverlay.classList.add("selected-overlay");
@@ -216,6 +220,30 @@
         document.querySelectorAll("polygon").forEach(tile => {
             document.querySelectorAll(".selected-overlay, .highlight-dot").forEach(el => el.remove());
         })
+    }
+
+    function highlight_check(tile_id) {
+        const board = document.getElementById("board");
+        const tile = document.getElementById(tile_id);
+        if (tile) {
+            // add overlay for highlight
+            const check_overlay = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+            check_overlay.setAttribute("points", tile.getAttribute("points"));
+            check_overlay.setAttribute("fill-opacity", "0");
+            check_overlay.setAttribute("stroke", "red");
+            check_overlay.setAttribute("stroke-width", "2");
+            check_overlay.setAttribute("pointer-events", "none");
+            check_overlay.setAttribute("id", "check_overlay")
+            
+            board.appendChild(check_overlay);
+        }
+    }
+
+    function clear_check() {
+        const check = document.getElementById("check_overlay");
+        if (check) {
+            check.remove()
+        }
     }
 
 </script>

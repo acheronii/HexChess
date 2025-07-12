@@ -54,6 +54,7 @@ def ajax_move_view(request):
             {
                 "winner": board.winner,
                 "turn": "White" if board.turn == 0 else "Black",
+                "check": board.check,
                 "legal_moves_json": json.dumps(
                     board.legal_moves, cls=DjangoJSONEncoder
                 ),
