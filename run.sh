@@ -1,1 +1,1 @@
-uv run manage.py runserver
+uv run uvicorn hexchess.asgi:application

@@ -16,6 +16,7 @@ def board_view(request):
     flipped = request.session.get("flipped", False)
     template = loader.get_template("game/board.html")
     context = {
+        "room_name": "room1",  # TODO edit this to be the actual room name for the board
         "board": board.as_json(flipped),
         "winner": board.winner,
         "turn": "White" if board.turn == 0 else "Black",

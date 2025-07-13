@@ -68,6 +68,8 @@
 
     let selected_tile = null;
 
+    let prev_move = null;
+
     function submit_click(element) {        
         const tile_id = element.getAttribute("id");
 
@@ -84,77 +86,10 @@
             // if we selected a legal move, move it
             if (legal_moves[selected_tile].includes(tile_id)) {
                 const move = selected_tile + ">" + tile_id;
-                const target_tile = document.getElementById(tile_id);
-
-                // get the piece we want to move and the target tile
-                const piece_id = `piece-${selected_tile}`;
-                const piece = document.getElementById(piece_id);
-                
-                // if there is a piece there already, remove it
-                const piece_taken_id = `piece-${tile_id}`;
-                const piece_taken = document.getElementById(piece_taken_id);
-                if (piece_taken) {
-                    piece_taken.remove()
-                }
-
-                // snap piece to new location
-                const target_x = target_tile.getAttribute("piece-x");
-                const target_y = target_tile.getAttribute("piece-y");
-                piece.setAttribute("x", target_x);
-                piece.setAttribute("y", target_y);
-
-                // set piece's id to the new tile
-                piece.setAttribute("id", `piece-${tile_id}`)
-                // make sure piece stays at front
-                piece.parentNode.appendChild(piece)
-
-
-                // clear the previous highlights
-                clear_highlights();
-                selected_tile = null;
-
-                // send move via ajax 
-                fetch("{% url 'game:ajax_move' %}", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded",
-                        "X-CSRFToken": "{{ csrf_token }}",
-                    },
-                        body: "move=" + encodeURIComponent(move),
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log("Move confirmed:", data);
-
-                    if (data.reload) {
-                        location.reload(true);
-                    }
-                    else {
-                        clear_check();
-                        if (data.check) {
-                            highlight_check(data.check);
-                        }
-
-                        // update legal moves
-                        legal_moves = JSON.parse(data.legal_moves_json); 
-
-                        // update display at the top
-                        const turn_display = document.getElementById("turn_disp");
-                        if (data.winner === null) {
-                            turn_display.textContent = `${data.turn} to move`
-                        } else if (data.winner === 0) {
-                            turn_display.textContent = `White wins!`
-                        } else if (data.winner === 1) {
-                            turn_display.textContent = `Black wins!`
-                        } else {
-                            turn_display.textContent = `Stalemate!`
-                        }
-                    }
-
-                })
-                .catch(error => {
-                    console.error("Move failed:", error);
-                });
+                // avoid trying to move when we receive the move we sent
+                prev_move = move; 
+                move_piece(selected_tile, tile_id);
+                send_move(move);
             }
             // selected a different allied piece
             else if (tile_id in legal_moves) {
@@ -244,6 +179,82 @@
         if (check) {
             check.remove()
         }
+    }
+
+    // websocket stuff
+
+    const roomname = "{{ room_name }}";
+    const socket = new WebSocket(
+        `ws://${window.location.host}/ws/game/${roomname}/`
+    );
+
+    // log when we interact
+    socket.onopen = function(e) {
+        console.log("WebSocket connected");
+    }
+
+    socket.onclose = function(e) {
+        console.log("WebSocket disconnected");
+    };
+
+    socket.onerror = function(e) {
+        console.error("WebSocket error:", e);
+    };
+
+    socket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        console.log("Recieved: ", data);
+
+        // if its not the move we just sent
+        if (data.move != prev_move) {
+            const move = data.move.split(">");
+            const from = move[0];
+            const to = move[1];
+
+            // make the move
+            move_piece(from, to);
+        }
+        
+        legal_moves = JSON.parse(data.legal_moves_json)
+
+        if (data.check) {
+            highlight_check(data.check)
+        }
+    }
+
+    function send_move(move_str) {
+        socket.send(JSON.stringify({
+            move: move_str
+        }));
+    }
+
+    function move_piece(from, to) {
+        to_tile = document.getElementById(to);
+
+        // get piece we are moving
+        const piece_id = `piece-${from}`;
+        const piece = document.getElementById(piece_id);
+        // remove piece we are moving onto
+        const piece_taken_id = `piece-${to}`;
+        const piece_taken = document.getElementById(piece_taken_id);
+        if (piece_taken) {
+            piece_taken.remove();
+        }
+
+        // move piece visually
+        const target_x = to_tile.getAttribute("piece-x");
+        const target_y = to_tile.getAttribute("piece-y");
+        piece.setAttribute("x", target_x);
+        piece.setAttribute("y", target_y);
+
+        // set piece's id to the new tile
+        piece.setAttribute("id", `piece-${to}`)
+        // make sure piece stays at front
+        piece.parentNode.appendChild(piece)
+
+        clear_highlights();
+        clear_check();
+        selected_tile = null;
     }
 
 </script>
