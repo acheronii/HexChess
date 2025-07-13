@@ -5,11 +5,9 @@ from django.urls import reverse
 from django.template import loader
 from django.core.serializers.json import DjangoJSONEncoder
 
-from engine.board import Board
+from apps.game.state import board
 
 # Create your views here.
-
-board = Board()
 
 
 def board_view(request):
