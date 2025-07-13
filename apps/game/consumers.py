@@ -71,7 +71,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             board.next_turn()
             response = {
                 "move": move,
-                "turn": board.turn,
+                "turn": "White" if board.turn == 0 else "Black",
                 "winner": board.winner,
                 "check": board.check,
                 "legal_moves_json": json.dumps(

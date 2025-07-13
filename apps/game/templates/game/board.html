@@ -220,6 +220,10 @@
         if (data.check) {
             highlight_check(data.check)
         }
+
+        update_turn(data.turn, data.winner);
+        
+
     }
 
     function send_move(move_str) {
@@ -255,6 +259,22 @@
         clear_highlights();
         clear_check();
         selected_tile = null;
+    }
+
+    function update_turn(turn, winner) {
+        const disp = document.getElementById("turn_disp");
+        if (winner) {
+            if (winner == 1) {
+                disp.textContent = "Black wins!";
+            } else if (winner == 0) {
+                disp.textContent = "White wins!";
+            } else {
+                disp.textContent = "Stalemate!";
+
+            }
+        } else {
+            disp.textContent = `${turn} to move`;
+        }
     }
 
 </script>
