@@ -6,7 +6,7 @@
         <a href="{% url 'accounts:profile' %}" style="color: white; margin-right: 1rem; text-decoration: none;">Account</a>
         <form method="POST" action="{% url 'logout' %}" style="display: inline;">
             {% csrf_token %}
-            <button type="submit" style="background: none; border: none; color: white; text-decoration: underline; cursor: pointer;">
+            <button type="submit" style="background: none; border: none; color: white; text-decoration: none; cursor: pointer;">
                 Logout
             </button>
         </form>
