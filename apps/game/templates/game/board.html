@@ -1,7 +1,9 @@
 {% load static %}
+<body>
+{% include 'includes/header.html' %}
 
 <link rel="stylesheet" href="{% static 'game/style.css' %}">
-
+<p>
 <form id="reset_form" method="POST" action="{% url 'game:reset' %}">
     {% csrf_token %}
     <input type="submit" value="Reset Board">
@@ -11,7 +13,7 @@
     {% csrf_token %}
     <input type="submit" value="Flip Board">
 </form>
-
+</p>
 
 <p id="turn_disp">
     {% if winner %}
@@ -56,6 +58,7 @@
     </g>
 </svg>
 
+</body>
 
 <script id="legal_moves_data" type="application/json">
     {{ legal_moves_json|safe }}

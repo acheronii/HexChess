@@ -10,6 +10,8 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
         self.room_group_name = f"game_{self.room_name}"
+        user = self.scope["user"]
+        print("User connected: ", user.username)
 
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
 
@@ -22,8 +24,8 @@ class GameConsumer(AsyncWebsocketConsumer):
         data = json.loads(text_data)
 
         move = data.get("move")
-        # player = self.scope["user"].username
-
+        player = self.scope["user"].username
+        print(f"Move {move} made by {player}")
         """
         TODO add validation for player and move, form payload to send to the javascript
         something like :

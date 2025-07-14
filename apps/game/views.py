@@ -4,16 +4,19 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 from django.template import loader
 from django.core.serializers.json import DjangoJSONEncoder
+from django.contrib.auth.decorators import login_required
 
 from apps.game.state import board
 
 # Create your views here.
 
 
+@login_required
 def board_view(request):
     flipped = request.session.get("flipped", False)
     template = loader.get_template("game/board.html")
     context = {
+        "user": request.user,
         "room_name": "room1",  # TODO edit this to be the actual room name for the board
         "board": board.as_json(flipped),
         "winner": board.winner,
