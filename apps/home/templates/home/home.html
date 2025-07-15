@@ -1,13 +1,16 @@
-{% include 'includes/header.html' %}
+{% extends 'includes/base.html' %}
+{% block title %}Home Page{% endblock %}
 
-<p>
-    Welcome to my home page!
-</p>
-<p>
-    <a href="{% url 'game:game_page' %}">Go to game page</a>
-</p>
+{% block content %}
+<div class="card">
+    <h2>Welcome to my home page!</h2>
+    <form method="POST" action="{% url 'game:game_page' %}">
+        {% csrf_token %}
+        <button type=submit>Go to game page</button>
+    </form>
 
-<p>
-    <a href="{% url 'login' %}">Login</a>
-</p>
-
+    <button type=button>
+        <a href="{% url 'login' %}">Login</a>
+    </button>
+</div>
+{% endblock %}

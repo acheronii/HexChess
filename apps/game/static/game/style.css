@@ -2,6 +2,13 @@ p {
     text-align: center;
 }
 
+#board {
+    background-color: #1e1e1e; 
+    color: #f0f0f0; 
+    margin: 0;
+    font-family: sans-serif;
+}
+
 #board-group {
     transition: transform 0.5s ease-in-out;
     transform-origin: 50% 50%;

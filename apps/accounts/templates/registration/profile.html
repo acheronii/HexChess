@@ -1,4 +1,8 @@
-{% include 'includes/header.html' %}
+{% extends 'includes/base.html' %}
+{% block title %}Profile Page{% endblock %}
+
+{% block content %}
+<div class="card">
 
 <h2>User: {{ user.username }}</h2>
 
@@ -7,4 +11,12 @@
     <button type="submit">Logout</button>
 </form>
 
-<p><a href="{% url 'home:home' %}">Return to Home</a></p>
+<form method="POST" action="{% url 'home:home' %}">
+    {% csrf_token %}
+    <button type="submit">
+    Return to Home
+    </button>
+</form>
+
+</div>
+{% endblock %}

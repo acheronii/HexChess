@@ -1,4 +1,9 @@
-{% include 'includes/header.html' %}
+{% extends 'includes/base.html' %}
+{% block title %}Login Page{% endblock %}
+
+{% block content %}
+
+<div class="card">
 
 <h2>Login</h2>
 <form method="post">
@@ -7,3 +12,7 @@
     <input type="hidden" name="next" value="{{ next }}">
     <button type="submit">Login</button>
 </form>
+
+</div>
+
+{% endblock %}

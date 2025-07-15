@@ -1,8 +1,14 @@
-{% load static %}
-<body>
-{% include 'includes/header.html' %}
+{% extends 'includes/base.html' %}
 
-<link rel="stylesheet" href="{% static 'game/style.css' %}">
+{% load static %}
+
+{% block title %}Game Page{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'game/style.css' %}">
+{% endblock %}
+
+{% block content %}
 <p>
 <form id="reset_form" method="POST" action="{% url 'game:reset' %}">
     {% csrf_token %}
@@ -30,7 +36,7 @@
 </p>
 
 
-<svg id="board" width="100vw" height="100vh" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg" style="display:block; background:#f0f0f0;">
+<svg id="board" width="100vw" height="100vh" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg" style="display:block;">
     <g id="board_group">
     {% for tile in board.tiles %}
         <polygon
@@ -58,8 +64,9 @@
     </g>
 </svg>
 
-</body>
+{% endblock %}
 
+{% block js %}
 <script id="legal_moves_data" type="application/json">
     {{ legal_moves_json|safe }}
 </script>
@@ -281,3 +288,5 @@
     }
 
 </script>
+
+{% endblock %}

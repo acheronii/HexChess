@@ -1,4 +1,8 @@
-{% include 'includes/header.html' %}
+{% extends 'includes/base.html' %}
+{% block title %}Signup Page{% endblock %}
+
+{% block content %}
+<div class="card">
 
 <h2>Sign Up</h2>
 <form method="post">
@@ -6,4 +10,13 @@
     {{ form.as_p }}
     <button type="submit">Sign up</button>
 </form>
-<a href="{% url 'login' %}">Already have an account?</a>
+
+<form method="POST" action="{% url 'login' %}">
+    {% csrf_token %}
+    <button type="submit">
+    Already have an account?
+    </button>
+</form>
+
+</div>
+{% endblock %}
