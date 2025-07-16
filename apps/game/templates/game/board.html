@@ -9,17 +9,8 @@
 {% endblock %}
 
 {% block content %}
-<p>
-<form id="reset_form" method="POST" action="{% url 'game:reset' %}">
-    {% csrf_token %}
-    <input type="submit" value="Reset Board">
-</form>
-
-<form id="flip_form" method="POST" action="{% url 'game:flip' %}">
-    {% csrf_token %}
-    <input type="submit" value="Flip Board">
-</form>
-</p>
+<button onclick="send_reset()">Reset</button>
+<button onclick="flip_board()">Flip Board</button>
 
 <p id="turn_disp">
     {% if winner %}
@@ -37,8 +28,9 @@
 
 
 <svg id="board" width="100vw" height="100vh" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+  
     <g id="board_group">
-    {% for tile in board.tiles %}
+        {% for tile in board.tiles %}
         <polygon
             points="{{tile.points}}"
             style="fill:{{tile.color}};stroke:black;stroke-width:2" 
@@ -49,19 +41,24 @@
             piece-y="{{ tile.piece_y }}" 
             onclick="submit_click(this)"
         />
+        {% endfor %}
+    </g>
+
+    <!-- Separate loop for pieces -->
+    {% for tile in board.tiles %}
         {% if tile.piece %}
-            {% with 'game/assets/'|add:tile.piece_path as image_path%}
-                <image 
-                id="piece-{{ tile.q }}_{{tile.r}}"
+        {% with 'game/assets/'|add:tile.piece_path as image_path %}
+            <image 
+                id="piece-{{ tile.q }}_{{tile.r }}"
                 href="{% static image_path %}" 
                 x="{{ tile.piece_x }}" 
                 y="{{ tile.piece_y }}" 
                 width="30" 
-                style="pointer-events: none;"/>
-            {% endwith %}
+                style="pointer-events: none;" />
+        {% endwith %}
         {% endif %}
     {% endfor %}
-    </g>
+
 </svg>
 
 {% endblock %}
@@ -117,14 +114,21 @@
 
     function highlight_moves(moves) {
         clear_highlights();
+
+
         // for each tile id in the given moves
         moves.forEach(tile_id => {
             // get the actual tile
             const tile = document.getElementById(tile_id);
             if (tile) {
                 // change it's highlighting
-                const center_x = tile.getAttribute("center-x");
-                const center_y = tile.getAttribute("center-y");
+                let center_x = parseFloat(tile.getAttribute("center-x"));
+                let center_y = parseFloat(tile.getAttribute("center-y"));
+
+                // invert y if needed
+                if (flipped) {
+                    center_y = 800 - center_y
+                }
                 
                 const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
                 dot.setAttribute("cx", center_x);
@@ -146,9 +150,17 @@
         const board = document.getElementById("board");
         const tile = document.getElementById(tile_id);
         if (tile) {
+
+            let points = tile.getAttribute("points");
+
+            // make sure we have the right points if flipped
+            if (flipped) {
+                points = flip_points_helper(points);
+            }
+
             // add overlay for highlight
             const selectedOverlay = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-            selectedOverlay.setAttribute("points", tile.getAttribute("points"));
+            selectedOverlay.setAttribute("points", points);
             selectedOverlay.setAttribute("fill", "black");
             selectedOverlay.setAttribute("fill-opacity", "0.3");
             selectedOverlay.setAttribute("stroke-width", "0");
@@ -158,6 +170,23 @@
 
             board.appendChild(selectedOverlay);
         }
+    }
+
+    function flip_points_helper(pointsStr, boardHeight = 800) {
+        // get rid of the extra whitespace
+        const cleaned = pointsStr.trim().replace(/\s+/g, " ");
+
+        // split
+        const nums = cleaned.split(" ");
+        const flippedPoints = [];
+
+        for (let i = 0; i < nums.length; i += 2) {
+            const x = nums[i].replace(",", ""); // remove the comma
+            const y = boardHeight - nums[i + 1];
+            flippedPoints.push(`${x},${y}`);
+        }
+
+        return flippedPoints.join(" ");
     }
 
 
@@ -171,6 +200,12 @@
         const board = document.getElementById("board");
         const tile = document.getElementById(tile_id);
         if (tile) {
+
+            // make sure we have the right points if flipped
+            if (flipped) {
+                points = flip_points_helper(points);
+            }
+            
             // add overlay for highlight
             const check_overlay = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
             check_overlay.setAttribute("points", tile.getAttribute("points"));
@@ -238,7 +273,8 @@
 
     function send_move(move_str) {
         socket.send(JSON.stringify({
-            move: move_str
+            type: "move",
+            move: move_str,
         }));
     }
 
@@ -259,8 +295,15 @@
         const target_x = to_tile.getAttribute("piece-x");
         const target_y = to_tile.getAttribute("piece-y");
         piece.setAttribute("x", target_x);
-        piece.setAttribute("y", target_y);
-
+        
+        // make sure we move to the right place based on flipping 
+        if (flipped) {
+            const height = parseFloat(document.getElementById("board").getAttribute("viewBox").split(" ")[3]);
+            piece.setAttribute("y", `${height - target_y - 30}`);
+        } else {
+            piece.setAttribute("y", target_y);
+        }
+        
         // set piece's id to the new tile
         piece.setAttribute("id", `piece-${to}`)
         // make sure piece stays at front
@@ -287,6 +330,35 @@
         }
     }
 
+    let flipped = false;
+
+    function flip_board() {
+        clear_highlights();
+
+        flipped = !flipped;
+
+        // flip the board
+        const transform_group = document.getElementById("board_group");
+        const board_svg = document.getElementById("board");
+
+        const viewBox = board_svg.getAttribute("viewBox").split(" ");
+        const height = parseFloat(viewBox[3]);
+
+        if (flipped) {
+            transform_group.setAttribute("transform", `scale(1, -1) translate(0, -${height})`);
+        } else {
+            transform_group.setAttribute("transform", "scale(1, 1) translate(0, 0)");
+        }
+
+
+        // flip the pieces
+        const piece_images = document.querySelectorAll("image[id^='piece-']");
+        piece_images.forEach(image => {
+            const y = parseFloat(image.getAttribute("y"));
+            image.setAttribute("y", `${height - y - 30}`)
+        })
+
+    }
 </script>
 
 {% endblock %}
