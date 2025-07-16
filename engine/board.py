@@ -439,34 +439,18 @@ class Board:
         tile.center_y = center_y
         tile.points = " ".join(points)
 
-        # repeat with flipped board
-        # calculate center of hex
-        center_x_flip = self.board_center[0] - 1.5 * self.size * tile.q
-        center_y_flip = self.board_center[1] + sqrt3 * self.size * (tile.r + tile.q / 2)
-        # calculate points, with self.size as distance from center
-        points_flipped = []
-        for i in range(6):
-            angle = i * math.pi / 3
-            points_flipped.append(
-                f"{center_x_flip + self.size * math.cos(angle)},\
-                          {center_y_flip + self.size * math.sin(angle)}"
-            )
-        tile.center_x_flip = center_x_flip
-        tile.center_y_flip = center_y_flip
-        tile.points_flipped = " ".join(points_flipped)
-
-    def as_json(self, flipped) -> dict:
+    def as_json(self) -> dict:
         """
         Output a JSON representation of the board state.
         """
         state = {"tiles": []}
         for tile in self.hexes:
             piece = tile.piece
-            center_x = tile.center_x_flip if flipped else tile.center_x
-            center_y = tile.center_y_flip if flipped else tile.center_y
+            center_x = tile.center_x
+            center_y = tile.center_y
             x = center_x - self.size / 2
             y = center_y - self.size / 2
-            points = tile.points_flipped if flipped else tile.points
+            points = tile.points
 
             state["tiles"].append(
                 {
