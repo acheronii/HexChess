@@ -54,7 +54,9 @@
         {% if tile.piece %}
         <g id="piece-{{ tile.q }}_{{ tile.r }}" class="piece-group" 
         transform="translate({{ tile.piece_x }}, {{ tile.piece_y }})"
-        style="transition: transform 0.15s ease;">
+        style="transition: transform 0.15s ease;"
+        curr-x="{{ tile.piece_x }}" 
+        curr-y="{{ tile.piece_y }}">
         {% with 'game/assets/'|add:tile.piece_path as image_path %}
             <image 
                 href="{% static image_path %}" 
@@ -315,12 +317,17 @@
         const target_x = to_tile.getAttribute("piece-x");
         const target_y = to_tile.getAttribute("piece-y");
         
+        // set new x
+        piece.setAttribute("curr-x", target_x);
+
         // make sure we move to the right place based on flipping 
         if (flipped) {
             const height = parseFloat(document.getElementById("board").getAttribute("viewBox").split(" ")[3]);
             piece.setAttribute("transform", `translate(${target_x}, ${height - target_y - 30})`);
+            piece.setAttribute("curr-y", `${height - target_y - 30}`);
         } else {
             piece.setAttribute("transform", `translate(${target_x}, ${target_y})`);
+            piece.setAttribute("curr-y", `${target_y}`);
         }
 
         // set piece's id to the new tile
@@ -377,10 +384,17 @@
 
 
         // flip the pieces
-        const piece_images = document.querySelectorAll("image[id^='piece-']");
-        piece_images.forEach(image => {
-            const y = parseFloat(image.getAttribute("y"));
-            image.setAttribute("y", `${height - y - 30}`)
+        const pieces = document.querySelectorAll("g[id^='piece-']");
+        pieces.forEach(piece => {
+            const x = piece.getAttribute("curr-x");
+            const y = piece.getAttribute("curr-y");
+            piece.setAttribute("style", "none");
+            piece.setAttribute("transform", `translate(${x}, ${height - y - 30})`);
+            piece.setAttribute("curr-y", `${height - y - 30}`);
+            // cant reset this instantly for some reason (not sure why)
+            setTimeout(() => {
+                piece.setAttribute("style", "transition: transform 0.15s ease;");
+            }, 0);
         })
 
     }
