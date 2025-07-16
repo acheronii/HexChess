@@ -1,0 +1,25 @@
+{% extends 'includes/base.html' %}
+
+{% load static %}
+
+{% block title %}HexChess | Game index{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2> 
+        Index Page
+    </h2>
+    <ul>
+    <li><button type="button">
+        <a href="{% url 'game:game_page' new_board_num %}">New board: {{ new_board_num }}</a>
+    </button></li>
+
+    {% for board in Board_list %}
+        <li><button type="button">
+            <a href="{% url 'game:game_page' board %}">Room: {{ board }}</a>
+        </button></li>
+    {% endfor %}
+    </ul>
+</div>
+
+{% endblock %}

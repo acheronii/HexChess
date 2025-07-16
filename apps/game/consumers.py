@@ -2,15 +2,15 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.core.serializers.json import DjangoJSONEncoder
 
-from apps.game.state import board
+from apps.game.state import boards
 
 
 class GameConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
-        self.room_group_name = f"game_{self.room_name}"
+        self.room_group_name = f"{self.room_name}"
         user = self.scope["user"]
-        print("User connected: ", user.username)
+        print(f"Room [{self.room_group_name}] User connected: {user.username}")
 
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
 
@@ -24,10 +24,18 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         message_type = data.get("type")
 
+        board = boards[self.room_group_name]["board"]
+
+        # should never happen, but tell to refresh the page if it doesnt exist (creates a game)
+        if not board:  # TODO send an error
+            await self.channel_layer.group_send(
+                self.room_group_name, {"type": "broadcast_reset"}
+            )
+
         if message_type == "move":
             move = data.get("move")
             player = self.scope["user"].username
-            print(f"[{self.room_group_name}]: Move {move} made by {player}")
+            print(f"Room [{self.room_group_name}]: Move {move} made by {player}")
             """
             TODO add validation for player and move, form payload to send to the javascript
             something like :

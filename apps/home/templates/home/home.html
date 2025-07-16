@@ -4,7 +4,7 @@
 {% block content %}
 <div class="card">
     <h2>Welcome to my home page!</h2>
-    <form method="POST" action="{% url 'game:game_page' %}">
+    <form method="POST" action="{% url 'game:index_page' %}">
         {% csrf_token %}
         <button type=submit>Go to game page</button>
     </form>
