@@ -58,6 +58,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                 # move the piece
                 board.move_piece((int(fro[0]), int(fro[1])), (int(to[0]), int(to[1])))
                 board.next_turn()
+
                 response = {
                     "type": "move",
                     "move": move,

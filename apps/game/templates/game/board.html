@@ -287,7 +287,6 @@
             if (data.check) {
                 highlight_check(data.check)
             }
-
             update_turn(data.turn, data.winner);
         }
         else if (data.type == "reset") {
@@ -347,7 +346,7 @@
 
     function update_turn(turn, winner) {
         const disp = document.getElementById("turn_disp");
-        if (winner) {
+        if (winner != null) {
             play_sound("game-end");
             if (winner == 1) {
                 disp.textContent = "Black wins!";
