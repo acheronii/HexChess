@@ -62,7 +62,7 @@ class Board:
     Contains a set of methods for making moves on the board
     """
 
-    def __init__(self, radius: int = 5, initial_state=None, size=30, center=(400, 400)):
+    def __init__(self, radius: int = 5, initial_state=None, size=30, center=(400, 300)):
         self.size = None
         if initial_state is None:
             initial_state = START_STATE

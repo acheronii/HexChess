@@ -9,8 +9,10 @@
 {% endblock %}
 
 {% block content %}
+<p id="buttons">
 <button onclick="send_reset()">Reset</button>
 <button onclick="flip_board()">Flip Board</button>
+</p>
 
 <p id="turn_disp">
     {% if winner %}
@@ -27,7 +29,10 @@
 </p>
 
 
-<svg id="board" width="100vw" height="100vh" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+<svg id="board"
+     viewBox="0 0 800 600"
+     preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"
+     style="width: 100%; height: 73vh; display: block; background: #1e1e1e;">
   
     <g id="board_group">
         {% for tile in board.tiles %}
@@ -127,7 +132,8 @@
 
                 // invert y if needed
                 if (flipped) {
-                    center_y = 800 - center_y
+                    const height = parseFloat(document.getElementById("board").getAttribute("viewBox").split(" ")[3]);
+                    center_y = height - center_y
                 }
                 
                 const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
@@ -172,7 +178,7 @@
         }
     }
 
-    function flip_points_helper(pointsStr, boardHeight = 800) {
+    function flip_points_helper(pointsStr) {
         // get rid of the extra whitespace
         const cleaned = pointsStr.trim().replace(/\s+/g, " ");
 
@@ -181,8 +187,9 @@
         const flippedPoints = [];
 
         for (let i = 0; i < nums.length; i += 2) {
+            const height = parseFloat(document.getElementById("board").getAttribute("viewBox").split(" ")[3]);
             const x = nums[i].replace(",", ""); // remove the comma
-            const y = boardHeight - nums[i + 1];
+            const y = height - nums[i + 1];
             flippedPoints.push(`${x},${y}`);
         }
 
