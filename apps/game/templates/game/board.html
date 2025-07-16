@@ -49,24 +49,35 @@
         {% endfor %}
     </g>
 
-    <!-- Separate loop for pieces -->
+    <!-- next loop for pieces -->
     {% for tile in board.tiles %}
         {% if tile.piece %}
+        <g id="piece-{{ tile.q }}_{{ tile.r }}" class="piece-group" 
+        transform="translate({{ tile.piece_x }}, {{ tile.piece_y }})"
+        style="transition: transform 0.15s ease;">
         {% with 'game/assets/'|add:tile.piece_path as image_path %}
             <image 
-                id="piece-{{ tile.q }}_{{tile.r }}"
                 href="{% static image_path %}" 
-                x="{{ tile.piece_x }}" 
-                y="{{ tile.piece_y }}" 
                 width="30" 
+                height="30"
                 style="pointer-events: none;" />
         {% endwith %}
+        </g>
         {% endif %}
     {% endfor %}
 
 </svg>
 
 {% endblock %}
+
+{% block other_static %}
+<audio id="sound-move" src="{% static 'game/assets/audio/move.mp3'%}"></audio>
+<audio id="sound-capture" src="{% static 'game/assets/audio/capture.mp3'%}"></audio>
+<audio id="sound-check" src="{% static 'game/assets/audio/check.mp3'%}"></audio>
+<audio id="sound-game-start" src="{% static 'game/assets/audio/game-start.mp3'%}"></audio>
+<audio id="sound-game-end" src="{% static 'game/assets/audio/game-end.mp3'%}"></audio>
+{% endblock %}
+
 
 {% block js %}
 <script id="legal_moves_data" type="application/json">
@@ -223,6 +234,7 @@
             check_overlay.setAttribute("id", "check_overlay")
             
             board.appendChild(check_overlay);
+            play_sound("check");
         }
     }
 
@@ -292,11 +304,9 @@
         to_tile = document.getElementById(to);
 
         // get piece we are moving
-        const piece_id = `piece-${from}`;
-        const piece = document.getElementById(piece_id);
+        const piece = document.getElementById(`piece-${from}`);
         // remove piece we are moving onto
-        const piece_taken_id = `piece-${to}`;
-        const piece_taken = document.getElementById(piece_taken_id);
+        const piece_taken = document.getElementById(`piece-${to}`);
         if (piece_taken) {
             piece_taken.remove();
         }
@@ -304,29 +314,34 @@
         // move piece visually
         const target_x = to_tile.getAttribute("piece-x");
         const target_y = to_tile.getAttribute("piece-y");
-        piece.setAttribute("x", target_x);
         
         // make sure we move to the right place based on flipping 
         if (flipped) {
             const height = parseFloat(document.getElementById("board").getAttribute("viewBox").split(" ")[3]);
-            piece.setAttribute("y", `${height - target_y - 30}`);
+            piece.setAttribute("transform", `translate(${target_x}, ${height - target_y - 30})`);
         } else {
-            piece.setAttribute("y", target_y);
+            piece.setAttribute("transform", `translate(${target_x}, ${target_y})`);
         }
 
         // set piece's id to the new tile
         piece.setAttribute("id", `piece-${to}`)
-        // make sure piece stays at front
-        piece.parentNode.appendChild(piece)
 
         clear_highlights();
         clear_check();
         selected_tile = null;
+
+        // if piece_taken play sound
+        if (piece_taken) {
+            play_sound("capture");
+        } else {
+            play_sound("move");
+        }
     }
 
     function update_turn(turn, winner) {
         const disp = document.getElementById("turn_disp");
         if (winner) {
+            play_sound("game-end");
             if (winner == 1) {
                 disp.textContent = "Black wins!";
             } else if (winner == 0) {
@@ -375,6 +390,15 @@
             type: "reset",
         }));
     }
+
+    function play_sound(name) {
+        const sound = document.getElementById(`sound-${name}`);
+        if (sound) {
+            sound.currentTime = 0;
+            sound.play();
+        }
+    }
+
 
 </script>
 
