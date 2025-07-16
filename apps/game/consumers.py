@@ -51,6 +51,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                 board.move_piece((int(fro[0]), int(fro[1])), (int(to[0]), int(to[1])))
                 board.next_turn()
                 response = {
+                    "type": "move",
                     "move": move,
                     "turn": "White" if board.turn == 0 else "Black",
                     "winner": board.winner,
@@ -65,6 +66,14 @@ class GameConsumer(AsyncWebsocketConsumer):
             await self.channel_layer.group_send(
                 self.room_group_name, {"type": "broadcast_move", "data": response}
             )
+        elif message_type == "reset":
+            board.__init__()
+            await self.channel_layer.group_send(
+                self.room_group_name, {"type": "broadcast_reset"}
+            )
+
+    async def broadcast_reset(self, event):
+        await self.send(text_data=json.dumps({"type": "reset"}))
 
     async def broadcast_move(self, event):
         await self.send(text_data=json.dumps(event["data"]))

@@ -250,25 +250,28 @@
         const data = JSON.parse(e.data);
         console.log("Recieved: ", data);
 
-        // if its not the move we just sent
-        if (data.move != prev_move) {
-            const move = data.move.split(">");
-            const from = move[0];
-            const to = move[1];
+        if (data.type == "move") {
+            // if its not the move we just sent
+            if (data.move != prev_move) {
+                const move = data.move.split(">");
+                const from = move[0];
+                const to = move[1];
 
-            // make the move
-            move_piece(from, to);
+                // make the move
+                move_piece(from, to);
+            }
+            
+            legal_moves = JSON.parse(data.legal_moves_json)
+
+            if (data.check) {
+                highlight_check(data.check)
+            }
+
+            update_turn(data.turn, data.winner);
         }
-        
-        legal_moves = JSON.parse(data.legal_moves_json)
-
-        if (data.check) {
-            highlight_check(data.check)
+        else if (data.type == "reset") {
+            location.reload(true);
         }
-
-        update_turn(data.turn, data.winner);
-        
-
     }
 
     function send_move(move_str) {
@@ -303,7 +306,7 @@
         } else {
             piece.setAttribute("y", target_y);
         }
-        
+
         // set piece's id to the new tile
         piece.setAttribute("id", `piece-${to}`)
         // make sure piece stays at front
@@ -359,6 +362,13 @@
         })
 
     }
+
+    function send_reset() {
+        socket.send(JSON.stringify({
+            type: "reset",
+        }));
+    }
+
 </script>
 
 {% endblock %}

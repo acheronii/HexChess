@@ -1,7 +1,6 @@
 import json
 
-from django.http import HttpResponse, HttpResponseRedirect
-from django.urls import reverse
+from django.http import HttpResponse
 from django.template import loader
 from django.core.serializers.json import DjangoJSONEncoder
 from django.contrib.auth.decorators import login_required
@@ -23,10 +22,3 @@ def board_view(request):
         "legal_moves_json": json.dumps(board.legal_moves, cls=DjangoJSONEncoder),
     }
     return HttpResponse(template.render(context, request))
-
-
-def reset_board(request):
-    if request.method == "POST":
-        board.__init__()
-        request.session["flipped"] = False
-        return HttpResponseRedirect(reverse("game:game_page"))
