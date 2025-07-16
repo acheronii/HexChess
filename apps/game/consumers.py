@@ -25,7 +25,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         move = data.get("move")
         player = self.scope["user"].username
-        print(f"Move {move} made by {player}")
+        print(f"[{self.room_group_name}]: Move {move} made by {player}")
         """
         TODO add validation for player and move, form payload to send to the javascript
         something like :
