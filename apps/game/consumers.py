@@ -32,23 +32,40 @@ class GameConsumer(AsyncWebsocketConsumer):
                 self.room_group_name, {"type": "broadcast_reset"}
             )
 
-        if message_type == "move":
+        if message_type == "color_choose":
+            board.players[data.get("color")] = self.scope["user"].username
+            # send to all that there is a player of that color, remove that button
+            response = {
+                "type": "color_choose",
+                "color": data.get("color"),
+                "player": self.scope["user"].username,
+            }
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {"type": "broadcast_color_choose", "data": response},
+            )
+
+        elif message_type == "move":
             move = data.get("move")
             player = self.scope["user"].username
             print(f"Room [{self.room_group_name}]: Move {move} made by {player}")
-            """
-            TODO add validation for player and move, form payload to send to the javascript
-            something like :
-                # Check that the player is the correct player
-                current_turn = board.turn
-                if (current_turn == 0 and user != room.white_player) or \
-                    (current_turn == 1 and user != room.black_player):
-                        # Not this user's turn — reject
-                        await self.send(text_data=json.dumps({
-                            "error": "You are not allowed to make this move."
-                        }))
-                        return
-            """
+
+            # verify that the player can make a move
+            current_turn = board.turn
+            if (
+                (current_turn == 0 and player != board.players["white"])
+                or current_turn == 1
+                and player != board.players["black"]
+            ):
+                await self.send(
+                    text_data=json.dumps(
+                        {
+                            "type": "error",
+                            "error": "You are not allowed to make this move.",
+                        }
+                    )
+                )
+                return
 
             fro, to = move.split(">")
             if fro in board.legal_moves.keys() and to in board.legal_moves[fro]:
@@ -70,7 +87,15 @@ class GameConsumer(AsyncWebsocketConsumer):
                     ),
                 }
             else:
-                response = {"reload": "True"}
+                await self.send(
+                    text_data=json.dumps(
+                        {
+                            "type": "error",
+                            "error": "You are not allowed to make this move.",
+                        }
+                    )
+                )
+                return
             # response = {"move": move}
             await self.channel_layer.group_send(
                 self.room_group_name, {"type": "broadcast_move", "data": response}
@@ -85,4 +110,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({"type": "reset"}))
 
     async def broadcast_move(self, event):
+        await self.send(text_data=json.dumps(event["data"]))
+
+    async def broadcast_color_choose(self, event):
         await self.send(text_data=json.dumps(event["data"]))

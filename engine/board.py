@@ -96,6 +96,11 @@ class Board:
         self.set_size(size)
         self.check = None
 
+        self.players = {
+            "white": None,
+            "black": None,
+        }
+
         # calculate the initial legal moves
         self.legal_moves = {}
         self.__calculate_legal_moves()

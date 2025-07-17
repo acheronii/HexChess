@@ -9,9 +9,17 @@
 {% endblock %}
 
 {% block content %}
-<p id="buttons">
-<button onclick="send_reset()">Reset</button>
-<button onclick="flip_board()">Flip Board</button>
+<p>
+    {% if white == null %}
+    <button onclick="send_white()" id="white_button">Join as white</button>
+    {% endif %}
+    <g id="forever_buttons">
+    <button onclick="send_reset()">Reset</button>
+    <button onclick="flip_board()">Flip Board</button>
+    </g>
+    {% if black == null %}
+    <button onclick="send_black()" id="black_button">Join as black</button>
+    {% endif %}
 </p>
 
 <p id="turn_disp">
@@ -95,10 +103,14 @@
 
     let prev_move = null;
 
+    let white = "{{white}}" 
+    let black = "{{black}}"
+    let turn = "{{turn}}"
+
     function submit_click(element) {        
         const tile_id = element.getAttribute("id");
 
-
+        console.log("User {{ user }} ", `White ${white}`, `turn ${turn}`);
         if (selected_tile === null) {
             
             // if we selected an allied piece, highlight the moves
@@ -109,7 +121,10 @@
             }
         } else { 
             // if we selected a legal move, move it
-            if (legal_moves[selected_tile].includes(tile_id)) {
+            if (legal_moves[selected_tile].includes(tile_id) &&
+                (( "{{user}}" == `${white}` && `${turn}` == "White") || 
+                 ( "{{user}}" == `${black}` && `${turn}` == "Black"))
+                ) {
                 const move = selected_tile + ">" + tile_id;
                 // avoid trying to move when we receive the move we sent
                 prev_move = move; 
@@ -270,8 +285,23 @@
     socket.onmessage = function(e) {
         const data = JSON.parse(e.data);
         console.log("Recieved: ", data);
-
-        if (data.type == "move") {
+        if (data.type == "color_choose") {
+            if (data.color == "white") {
+                document.getElementById("white_button").remove()
+                white = data.player;
+            }
+            if (data.color == "black") {
+                document.getElementById("black_button").remove()
+                black = data.player;
+            }
+        }
+        else if (data.type == "error") {
+            location.reload(true);
+        }
+        else if (data.type == "reset") {
+            location.reload(true);
+        }
+        else if (data.type == "move") {
             // if its not the move we just sent
             if (data.move != prev_move) {
                 const move = data.move.split(">");
@@ -288,9 +318,7 @@
                 highlight_check(data.check)
             }
             update_turn(data.turn, data.winner);
-        }
-        else if (data.type == "reset") {
-            location.reload(true);
+            turn = data.turn;
         }
     }
 
@@ -412,6 +440,20 @@
         }
     }
 
+    function send_white() {
+        socket.send(JSON.stringify({
+            type: "color_choose",
+            color: "white",
+        }));
+    }
+    
+    
+    function send_black() {
+        socket.send(JSON.stringify({
+            type: "color_choose",
+            color: "black",
+        }));
+    }
 
 </script>
 

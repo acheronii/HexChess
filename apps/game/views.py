@@ -35,11 +35,13 @@ def board_view(request, room):
 
     template = loader.get_template("game/board.html")
     context = {
-        "user": request.user,
+        "players": board.players,
         "room_name": room,
         "board": board.as_json(),
         "winner": board.winner,
         "turn": "White" if board.turn == 0 else "Black",
         "legal_moves_json": json.dumps(board.legal_moves, cls=DjangoJSONEncoder),
+        "white": board.players["white"],
+        "black": board.players["black"],
     }
     return HttpResponse(template.render(context, request))
