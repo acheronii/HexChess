@@ -34,7 +34,8 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         if message_type == "color_choose":
             board.players[data.get("color")] = self.scope["user"].username
-            # send to all that there is a player of that color, remove that button
+            # send to all that there is a player of that color and who the
+            # player is. they should remove that button
             response = {
                 "type": "color_choose",
                 "color": data.get("color"),

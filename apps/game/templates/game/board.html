@@ -95,60 +95,21 @@
 </script>
 
 
-<script>
+<script id="visual/audio">
+    // All the visual/audio changes
 
-    let legal_moves = JSON.parse(document.getElementById("legal_moves_data").textContent);
-
-    let selected_tile = null;
-
-    let prev_move = null;
-
-    let white = "{{white}}" 
-    let black = "{{black}}"
-    let turn = "{{turn}}"
-
-    function submit_click(element) {        
-        const tile_id = element.getAttribute("id");
-
-        console.log("User {{ user }} ", `White ${white}`, `turn ${turn}`);
-        if (selected_tile === null) {
-            
-            // if we selected an allied piece, highlight the moves
-            if (tile_id in legal_moves) {
-                selected_tile = tile_id;
-                highlight_moves(legal_moves[tile_id]);
-                highlight_selected(tile_id)
-            }
-        } else { 
-            // if we selected a legal move, move it
-            if (legal_moves[selected_tile].includes(tile_id) &&
-                (( "{{user}}" == `${white}` && `${turn}` == "White") || 
-                 ( "{{user}}" == `${black}` && `${turn}` == "Black"))
-                ) {
-                const move = selected_tile + ">" + tile_id;
-                // avoid trying to move when we receive the move we sent
-                prev_move = move; 
-                move_piece(selected_tile, tile_id);
-                send_move(move);
-            }
-            // selected a different allied piece
-            else if (tile_id in legal_moves) {
-                selected_tile = tile_id;
-                highlight_moves(legal_moves[tile_id]);
-                highlight_selected(tile_id)
-            }
-            // if the move isnt legal, clear the highlights
-            else {
-                clear_highlights();
-                selected_tile = null;
-            }
+    // plays a sound 
+    function play_sound(name) {
+        const sound = document.getElementById(`sound-${name}`);
+        if (sound) {
+            sound.currentTime = 0;
+            sound.play();
         }
     }
 
+    // highlight the moves we can make with a piece
     function highlight_moves(moves) {
         clear_highlights();
-
-
         // for each tile id in the given moves
         moves.forEach(tile_id => {
             // get the actual tile
@@ -173,13 +134,12 @@
                 dot.setAttribute("pointer-events", "none");
 
                 dot.classList.add("highlight-dot");
-
                 board.appendChild(dot);
             }
         })
-
     }
 
+    // highlights the selected tile
     function highlight_selected(tile_id) {
         const board = document.getElementById("board");
         const tile = document.getElementById(tile_id);
@@ -206,6 +166,15 @@
         }
     }
 
+    // clears all highlights (selected and moves)
+    function clear_highlights() {
+        document.querySelectorAll("polygon").forEach(tile => {
+            document.querySelectorAll(".selected-overlay, .highlight-dot").forEach(el => el.remove());
+        })
+    }
+
+
+    // helps with flipping the y coordinates of points, returning the new set
     function flip_points_helper(pointsStr) {
         // get rid of the extra whitespace
         const cleaned = pointsStr.trim().replace(/\s+/g, " ");
@@ -224,13 +193,7 @@
         return flippedPoints.join(" ");
     }
 
-
-    function clear_highlights() {
-        document.querySelectorAll("polygon").forEach(tile => {
-            document.querySelectorAll(".selected-overlay, .highlight-dot").forEach(el => el.remove());
-        })
-    }
-
+    // highlights a tile as in check
     function highlight_check(tile_id) {
         const board = document.getElementById("board");
         const tile = document.getElementById(tile_id);
@@ -255,6 +218,7 @@
         }
     }
 
+    // clears the check tile
     function clear_check() {
         const check = document.getElementById("check_overlay");
         if (check) {
@@ -262,6 +226,81 @@
         }
     }
 
+    // flip the board when we hit the flip board button
+    function flip_board() {
+        clear_highlights();
+
+        flipped = !flipped;
+
+        // flip the board
+        const transform_group = document.getElementById("board_group");
+        const board_svg = document.getElementById("board");
+
+        const viewBox = board_svg.getAttribute("viewBox").split(" ");
+        const height = parseFloat(viewBox[3]);
+
+        if (flipped) {
+            transform_group.setAttribute("transform", `scale(1, -1) translate(0, -${height})`);
+        } else {
+            transform_group.setAttribute("transform", "scale(1, 1) translate(0, 0)");
+        }
+
+        // flip the pieces
+        const pieces = document.querySelectorAll("g[id^='piece-']");
+        pieces.forEach(piece => {
+            const x = piece.getAttribute("curr-x");
+            const y = piece.getAttribute("curr-y");
+            piece.setAttribute("style", "none");
+            piece.setAttribute("transform", `translate(${x}, ${height - y - 30})`);
+            piece.setAttribute("curr-y", `${height - y - 30}`);
+            // cant reset this instantly for some reason (not sure why)
+            setTimeout(() => {
+                piece.setAttribute("style", "transition: transform 0.15s ease;");
+            }, 0);
+        })
+    }
+
+    // updates the turn display to show winner or who is to play
+    function update_turn(turn, winner) {
+        const disp = document.getElementById("turn_disp");
+        if (winner != null) {
+            play_sound("game-end");
+            if (winner == 1) {
+                disp.textContent = "Black wins!";
+            } else if (winner == 0) {
+                disp.textContent = "White wins!";
+            } else {
+                disp.textContent = "Stalemate!";
+
+            }
+        } else {
+            disp.textContent = `${turn} to move`;
+        }
+    }
+
+</script>
+
+<script id="vars">
+    // variables 
+
+    // track the legal moves
+    let legal_moves = JSON.parse(document.getElementById("legal_moves_data").textContent);
+
+    let selected_tile = null;
+
+    // used to avoid double moving a move we sent
+    let prev_move = null;
+
+    // track the players and turn
+    let white = "{{white}}" 
+    let black = "{{black}}"
+    let turn = "{{turn}}"
+
+    let flipped = false;
+
+</script>
+
+<script id="websockets">
     // websocket stuff
 
     const roomname = "{{ room_name }}";
@@ -322,6 +361,7 @@
         }
     }
 
+    // send a move that we made
     function send_move(move_str) {
         socket.send(JSON.stringify({
             type: "move",
@@ -329,6 +369,76 @@
         }));
     }
 
+    
+    // send to reset the board to the whole lobby
+    function send_reset() {
+        socket.send(JSON.stringify({
+            type: "reset",
+        }));
+    }
+
+    // send that we hit the "choose white" button
+    // also flips board to white
+    function send_white() {
+        socket.send(JSON.stringify({
+            type: "color_choose",
+            color: "white",
+        }));
+        if (flipped) {
+            flip_board();
+        }
+    }
+    
+    // send that we hit the "choose black" button
+    // also flips board to black
+    function send_black() {
+        socket.send(JSON.stringify({
+            type: "color_choose",
+            color: "black",
+        }));
+        if (!flipped) {
+            flip_board();
+        }
+    }
+
+    // what happens when we click on a tile
+    function submit_click(element) {        
+        const tile_id = element.getAttribute("id");
+
+        if (selected_tile === null) {
+            // if we selected an allied piece, highlight the moves
+            if (tile_id in legal_moves) {
+                selected_tile = tile_id;
+                highlight_moves(legal_moves[tile_id]);
+                highlight_selected(tile_id)
+            }
+        } else { 
+            // if we selected a legal move and are allowed to move, move it
+            if (legal_moves[selected_tile].includes(tile_id) &&
+                (( "{{user}}" == `${white}` && `${turn}` == "White") || 
+                 ( "{{user}}" == `${black}` && `${turn}` == "Black"))
+                ) {
+                const move = selected_tile + ">" + tile_id;
+                // avoid trying to move when we receive the move we sent
+                prev_move = move; 
+                move_piece(selected_tile, tile_id);
+                send_move(move);
+            }
+            // selected a different allied piece
+            else if (tile_id in legal_moves) {
+                selected_tile = tile_id;
+                highlight_moves(legal_moves[tile_id]);
+                highlight_selected(tile_id)
+            }
+            // if the move isnt legal, clear the highlights
+            else {
+                clear_highlights();
+                selected_tile = null;
+            }
+        }
+    }
+
+    // moves a piece 
     function move_piece(from, to) {
         to_tile = document.getElementById(to);
 
@@ -372,88 +482,6 @@
         }
     }
 
-    function update_turn(turn, winner) {
-        const disp = document.getElementById("turn_disp");
-        if (winner != null) {
-            play_sound("game-end");
-            if (winner == 1) {
-                disp.textContent = "Black wins!";
-            } else if (winner == 0) {
-                disp.textContent = "White wins!";
-            } else {
-                disp.textContent = "Stalemate!";
-
-            }
-        } else {
-            disp.textContent = `${turn} to move`;
-        }
-    }
-
-    let flipped = false;
-
-    function flip_board() {
-        clear_highlights();
-
-        flipped = !flipped;
-
-        // flip the board
-        const transform_group = document.getElementById("board_group");
-        const board_svg = document.getElementById("board");
-
-        const viewBox = board_svg.getAttribute("viewBox").split(" ");
-        const height = parseFloat(viewBox[3]);
-
-        if (flipped) {
-            transform_group.setAttribute("transform", `scale(1, -1) translate(0, -${height})`);
-        } else {
-            transform_group.setAttribute("transform", "scale(1, 1) translate(0, 0)");
-        }
-
-
-        // flip the pieces
-        const pieces = document.querySelectorAll("g[id^='piece-']");
-        pieces.forEach(piece => {
-            const x = piece.getAttribute("curr-x");
-            const y = piece.getAttribute("curr-y");
-            piece.setAttribute("style", "none");
-            piece.setAttribute("transform", `translate(${x}, ${height - y - 30})`);
-            piece.setAttribute("curr-y", `${height - y - 30}`);
-            // cant reset this instantly for some reason (not sure why)
-            setTimeout(() => {
-                piece.setAttribute("style", "transition: transform 0.15s ease;");
-            }, 0);
-        })
-
-    }
-
-    function send_reset() {
-        socket.send(JSON.stringify({
-            type: "reset",
-        }));
-    }
-
-    function play_sound(name) {
-        const sound = document.getElementById(`sound-${name}`);
-        if (sound) {
-            sound.currentTime = 0;
-            sound.play();
-        }
-    }
-
-    function send_white() {
-        socket.send(JSON.stringify({
-            type: "color_choose",
-            color: "white",
-        }));
-    }
-    
-    
-    function send_black() {
-        socket.send(JSON.stringify({
-            type: "color_choose",
-            color: "black",
-        }));
-    }
 
 </script>
 
