@@ -31,6 +31,7 @@ def board_view(request, room):
     else:
         boards[room] = {}
         boards[room]["board"] = Board()
+        boards[room]["users"] = 0
         board = boards[room]["board"]
 
     template = loader.get_template("game/board.html")

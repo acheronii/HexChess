@@ -16,8 +16,15 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         await self.accept()
 
+        boards[self.room_group_name]["users"] += 1
+
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+
+        boards[self.room_group_name]["users"] -= 1
+
+        if boards[self.room_group_name]["users"] == 0:
+            del boards[self.room_group_name]
 
     async def receive(self, text_data):
         data = json.loads(text_data)
@@ -27,10 +34,16 @@ class GameConsumer(AsyncWebsocketConsumer):
         board = boards[self.room_group_name]["board"]
 
         # should never happen, but tell to refresh the page if it doesnt exist (creates a game)
-        if not board:  # TODO send an error
-            await self.channel_layer.group_send(
-                self.room_group_name, {"type": "broadcast_reset"}
+        if not board:
+            await self.send(
+                text_data=json.dumps(
+                    {
+                        "type": "error",
+                        "error": "Board does not exist, refresh to create it.",
+                    }
+                )
             )
+            return
 
         if message_type == "color_choose":
             board.players[data.get("color")] = self.scope["user"].username
@@ -100,11 +113,6 @@ class GameConsumer(AsyncWebsocketConsumer):
             # response = {"move": move}
             await self.channel_layer.group_send(
                 self.room_group_name, {"type": "broadcast_move", "data": response}
-            )
-        elif message_type == "reset":
-            board.__init__()
-            await self.channel_layer.group_send(
-                self.room_group_name, {"type": "broadcast_reset"}
             )
 
     async def broadcast_reset(self, event):

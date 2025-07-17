@@ -14,7 +14,6 @@
     <button onclick="send_white()" id="white_button">Join as white</button>
     {% endif %}
     <g id="forever_buttons">
-    <button onclick="send_reset()">Reset</button>
     <button onclick="flip_board()">Flip Board</button>
     </g>
     {% if black == null %}
@@ -370,12 +369,6 @@
     }
 
     
-    // send to reset the board to the whole lobby
-    function send_reset() {
-        socket.send(JSON.stringify({
-            type: "reset",
-        }));
-    }
 
     // send that we hit the "choose white" button
     // also flips board to white
