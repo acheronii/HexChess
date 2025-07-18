@@ -414,7 +414,8 @@
             }
         } else { 
             // if we selected a legal move and are allowed to move, move it
-            if (legal_moves[selected_tile].includes(tile_id) &&
+            if (legal_moves[selected_tile] != null &&
+                legal_moves[selected_tile].includes(tile_id) &&
                 (( "{{user}}" == `${white}` && `${turn}` == "White") || 
                  ( "{{user}}" == `${black}` && `${turn}` == "Black"))
                 ) {
