@@ -23,13 +23,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-+$pzib3_@6d&dz6s%ah^4qo1ppv^5h@s1u^dgh-pia+@k2-_ps"
+SECRET_KEY = os.getenv(
+    "SECRET_KEY", "django-insecure-+$pzib3_@6d&dz6s%ah^4qo1ppv^5h@s1u^dgh-pia+@k2-_ps"
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "localhost",
+    os.getenv("ALLOWED_HOST"),
+]
 
+CSRF_TRUSTED_ORIGINS = [
+    os.getenv("CSRF_TRUSTED_ORIGINS"),
+]
 
 # Application definition
 
@@ -81,7 +89,9 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
+            "hosts": [
+                (os.getenv("REDIS_URL", "redis"), os.getenv("REDIS_PORT", "6379")),
+            ],
         },
     }
 }
@@ -143,4 +153,4 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-LOGOUT_REDIRECT_URL = reverse_lazy("home:home")
+LOGOUT_REDIRECT_URL = reverse_lazy("accounts:signout")

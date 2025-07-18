@@ -19,6 +19,11 @@ def signup_view(request):
     return HttpResponse(template.render({"form": form}, request))
 
 
+def logged_out_view(request):
+    template = loader.get_template("registration/signout.html")
+    return HttpResponse(template.render({}, request))
+
+
 @login_required
 def profile_view(request):
     template = loader.get_template("registration/profile.html")

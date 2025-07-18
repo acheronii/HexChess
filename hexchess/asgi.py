@@ -22,9 +22,9 @@ django.setup()
 
 application = ProtocolTypeRouter(
     {
-        # traditional http such as AJAX and GET requests
+        # http such as AJAX and GET requests
         "http": get_asgi_application(),
-        # Websocket connections
+        # Wwebsocket connections
         "websocket": AuthMiddlewareStack(
             URLRouter(apps.game.routing.websocket_urlpatterns)
         ),

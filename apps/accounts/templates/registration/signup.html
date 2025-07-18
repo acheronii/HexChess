@@ -11,12 +11,10 @@
     <button type="submit">Sign up</button>
 </form>
 
-<form method="POST" action="{% url 'login' %}">
-    {% csrf_token %}
-    <button type="submit">
-    Already have an account?
-    </button>
-</form>
+Already have an account?
+ <button type=button>
+        <a href="{% url 'login' %}">Log in</a>
+</button>
 
 </div>
 {% endblock %}
