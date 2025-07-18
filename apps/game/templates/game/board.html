@@ -94,6 +94,27 @@
 </script>
 
 
+
+<script id="vars">
+    // variables 
+
+    // track the legal moves
+    let legal_moves = JSON.parse(document.getElementById("legal_moves_data").textContent);
+
+    let selected_tile = null;
+
+    // used to avoid double moving a move we sent
+    let prev_move = null;
+
+    // track the players and turn
+    let white = "{{white}}" 
+    let black = "{{black}}"
+    let turn = "{{turn}}"
+
+    let flipped = false;
+
+</script>
+
 <script id="visual/audio">
     // All the visual/audio changes
 
@@ -198,6 +219,8 @@
         const tile = document.getElementById(tile_id);
         if (tile) {
 
+            let points = tile.getAttribute("points");
+
             // make sure we have the right points if flipped
             if (flipped) {
                 points = flip_points_helper(points);
@@ -205,7 +228,7 @@
             
             // add overlay for highlight
             const check_overlay = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-            check_overlay.setAttribute("points", tile.getAttribute("points"));
+            check_overlay.setAttribute("points", points);
             check_overlay.setAttribute("fill-opacity", "0");
             check_overlay.setAttribute("stroke", "red");
             check_overlay.setAttribute("stroke-width", "2");
@@ -279,33 +302,17 @@
 
 </script>
 
-<script id="vars">
-    // variables 
-
-    // track the legal moves
-    let legal_moves = JSON.parse(document.getElementById("legal_moves_data").textContent);
-
-    let selected_tile = null;
-
-    // used to avoid double moving a move we sent
-    let prev_move = null;
-
-    // track the players and turn
-    let white = "{{white}}" 
-    let black = "{{black}}"
-    let turn = "{{turn}}"
-
-    let flipped = false;
-
-</script>
 
 <script id="websockets">
     // websocket stuff
 
     const roomname = "{{ room_name }}";
-    const socket = new WebSocket(
-        `ws://${window.location.host}/ws/game/${roomname}/`
-    );
+
+    const loc = window.location;
+    const wsScheme = loc.protocol == "https:" ? "wss://" : "ws://";
+    const endpoint = wsScheme + loc.host + `/ws/game/${roomname}/`;
+
+    const socket = new WebSocket(endpoint);
 
     // log when we interact
     socket.onopen = function(e) {

@@ -85,16 +85,30 @@ TEMPLATES = [
 
 ASGI_APPLICATION = "hexchess.asgi.application"
 
+
+redis_url = os.getenv("REDIS_URL", "redis")
+redis_port = os.getenv("REDIS_PORT", "6379")
+redis_password = os.getenv("REDIS_PASS", None)
+redis_ssl = os.getenv("REDIS_SSL", None)
+
+if redis_password:  # include password if we have it
+    redis_url_str = f"redis://:{redis_password}@{redis_url}:{redis_port}/0"
+else:  # otherwise dont add it
+    redis_url_str = f"redis://{redis_url}:{redis_port}/0"
+
+if redis_ssl:  # add secure if needed
+    redis_url_str = redis_url_str.replace("redis://", "rediss://")
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [
-                (os.getenv("REDIS_URL", "redis"), os.getenv("REDIS_PORT", "6379")),
-            ],
+            "hosts": [redis_url_str],
         },
     }
 }
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 WSGI_APPLICATION = "hexchess.wsgi.application"
 
