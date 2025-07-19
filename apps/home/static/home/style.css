@@ -26,6 +26,7 @@ header {
     border-bottom: 1px solid var(--gray-light);
 }
 
+
 header h1 a{
     margin: 0;
     font-size: 1em;
@@ -83,6 +84,11 @@ button {
 
 button:hover {
     background-color: var(--green-dark);
+}
+
+button a {
+    color: var(--text-main);
+    text-decoration: none;
 }
 
 .danger {
