@@ -42,6 +42,8 @@
      style="width: 100%; height: 73vh; display: block; background: #1e1e1e;">
   
     <g id="board_group">
+
+
         {% for tile in board.tiles %}
         <polygon
             points="{{tile.points}}"
@@ -54,6 +56,9 @@
             onclick="submit_click(this)"
         />
         {% endfor %}
+
+        
+        <g id="highlight_group"></g>
     </g>
 
     <!-- next loop for pieces -->
@@ -136,14 +141,8 @@
             const tile = document.getElementById(tile_id);
             if (tile) {
                 // change it's highlighting
-                let center_x = parseFloat(tile.getAttribute("center-x"));
-                let center_y = parseFloat(tile.getAttribute("center-y"));
-
-                // invert y if needed
-                if (flipped) {
-                    const height = parseFloat(document.getElementById("board").getAttribute("viewBox").split(" ")[3]);
-                    center_y = height - center_y
-                }
+                const center_x = parseFloat(tile.getAttribute("center-x"));
+                const center_y = parseFloat(tile.getAttribute("center-y"));
                 
                 const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
                 dot.setAttribute("cx", center_x);
@@ -154,23 +153,21 @@
                 dot.setAttribute("pointer-events", "none");
 
                 dot.classList.add("highlight-dot");
-                board.appendChild(dot);
+                const highlights = document.getElementById("highlight_group");
+
+                highlights.appendChild(dot);
             }
         })
     }
 
     // highlights the selected tile
     function highlight_selected(tile_id) {
-        const board = document.getElementById("board");
+        const highlights = document.getElementById("highlight_group");
         const tile = document.getElementById(tile_id);
         if (tile) {
 
-            let points = tile.getAttribute("points");
+            const points = tile.getAttribute("points");
 
-            // make sure we have the right points if flipped
-            if (flipped) {
-                points = flip_points_helper(points);
-            }
 
             // add overlay for highlight
             const selectedOverlay = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
@@ -182,7 +179,7 @@
             
             selectedOverlay.classList.add("selected-overlay");
 
-            board.appendChild(selectedOverlay);
+            highlights.appendChild(selectedOverlay);
         }
     }
 
@@ -215,16 +212,12 @@
 
     // highlights a tile as in check
     function highlight_check(tile_id) {
-        const board = document.getElementById("board");
+        const highlights = document.getElementById("highlight_group");
         const tile = document.getElementById(tile_id);
         if (tile) {
 
-            let points = tile.getAttribute("points");
+            const points = tile.getAttribute("points");
 
-            // make sure we have the right points if flipped
-            if (flipped) {
-                points = flip_points_helper(points);
-            }
             
             // add overlay for highlight
             const check_overlay = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
@@ -235,7 +228,7 @@
             check_overlay.setAttribute("pointer-events", "none");
             check_overlay.setAttribute("id", "check_overlay")
             
-            board.appendChild(check_overlay);
+            highlights.appendChild(check_overlay);
             play_sound("check");
         }
     }
@@ -246,6 +239,34 @@
         if (check) {
             check.remove()
         }
+    }
+
+    // highlights in the style of the previous move
+    function highlight_prev_move(tile_id) {
+        const highlights = document.getElementById("highlight_group");
+        const tile = document.getElementById(tile_id);
+        if (tile) {
+
+            const points = tile.getAttribute("points");
+
+            // add overlay for highlight
+            const prevMoveOverlay = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+            prevMoveOverlay.setAttribute("points", points);
+            prevMoveOverlay.setAttribute("fill", "rgb(204, 145, 34)"); // same as chess.com
+            prevMoveOverlay.setAttribute("fill-opacity", "0.5");
+            prevMoveOverlay.setAttribute("stroke-width", "0");
+            prevMoveOverlay.setAttribute("pointer-events", "none");
+            
+            prevMoveOverlay.classList.add("prev-move-overlay");
+
+            highlights.appendChild(prevMoveOverlay);
+        }
+    }
+
+    function clear_prev_move() {
+        document.querySelectorAll("polygon").forEach(tile => {
+            document.querySelectorAll(".prev-move-overlay").forEach(el => el.remove());
+        })
     }
 
     // flip the board when we hit the flip board button
@@ -403,6 +424,7 @@
 
     // what happens when we click on a tile
     function submit_click(element) {        
+        console.log("flipped: ", flipped);
         const tile_id = element.getAttribute("id");
 
         if (selected_tile === null) {
@@ -470,9 +492,12 @@
 
         // set piece's id to the new tile
         piece.setAttribute("id", `piece-${to}`)
-
+        
         clear_highlights();
         clear_check();
+        clear_prev_move();
+        highlight_prev_move(from);
+        highlight_prev_move(to);
         selected_tile = null;
 
         // if piece_taken play sound
