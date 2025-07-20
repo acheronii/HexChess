@@ -1,4 +1,4 @@
-from django.contrib.auth.forms import UserCreationForm
+from .forms import LowercaseUserCreationForm
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 from django.template import loader
@@ -9,12 +9,12 @@ from django.http import HttpResponse
 
 def signup_view(request):
     if request.method == "POST":
-        form = UserCreationForm(request.POST)
+        form = LowercaseUserCreationForm(request.POST)
         if form.is_valid():
             form.save()  # save user
             return redirect("login")  # go to login page
     else:
-        form = UserCreationForm()
+        form = LowercaseUserCreationForm()
     template = loader.get_template("registration/signup.html")
     return HttpResponse(template.render({"form": form}, request))
 
