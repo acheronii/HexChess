@@ -190,26 +190,6 @@
         })
     }
 
-
-    // helps with flipping the y coordinates of points, returning the new set
-    function flip_points_helper(pointsStr) {
-        // get rid of the extra whitespace
-        const cleaned = pointsStr.trim().replace(/\s+/g, " ");
-
-        // split
-        const nums = cleaned.split(" ");
-        const flippedPoints = [];
-
-        for (let i = 0; i < nums.length; i += 2) {
-            const height = parseFloat(document.getElementById("board").getAttribute("viewBox").split(" ")[3]);
-            const x = nums[i].replace(",", ""); // remove the comma
-            const y = height - nums[i + 1];
-            flippedPoints.push(`${x},${y}`);
-        }
-
-        return flippedPoints.join(" ");
-    }
-
     // highlights a tile as in check
     function highlight_check(tile_id) {
         const highlights = document.getElementById("highlight_group");
@@ -281,9 +261,10 @@
 
         const viewBox = board_svg.getAttribute("viewBox").split(" ");
         const height = parseFloat(viewBox[3]);
+        const width = parseFloat(viewBox[2]);
 
         if (flipped) {
-            transform_group.setAttribute("transform", `scale(1, -1) translate(0, -${height})`);
+            transform_group.setAttribute("transform", `scale(-1, -1) translate(-${width}, -${height})`);
         } else {
             transform_group.setAttribute("transform", "scale(1, 1) translate(0, 0)");
         }
@@ -294,8 +275,9 @@
             const x = piece.getAttribute("curr-x");
             const y = piece.getAttribute("curr-y");
             piece.setAttribute("style", "none");
-            piece.setAttribute("transform", `translate(${x}, ${height - y - 30})`);
+            piece.setAttribute("transform", `translate(${width - x - 30}, ${height - y - 30})`);
             piece.setAttribute("curr-y", `${height - y - 30}`);
+            piece.setAttribute("curr-x", `${width - x - 30}`);
             // cant reset this instantly for some reason (not sure why)
             setTimeout(() => {
                 piece.setAttribute("style", "transition: transform 0.15s ease;");
@@ -476,18 +458,23 @@
         // move piece visually
         const target_x = to_tile.getAttribute("piece-x");
         const target_y = to_tile.getAttribute("piece-y");
+
         
+        const viewBox = document.getElementById("board").getAttribute("viewBox").split(" ");
+        const height = parseFloat(viewBox[3]);
+        const width = parseFloat(viewBox[2]);
+
         // set new x
-        piece.setAttribute("curr-x", target_x);
 
         // make sure we move to the right place based on flipping 
         if (flipped) {
-            const height = parseFloat(document.getElementById("board").getAttribute("viewBox").split(" ")[3]);
-            piece.setAttribute("transform", `translate(${target_x}, ${height - target_y - 30})`);
+            piece.setAttribute("transform", `translate(${width - target_x - 30}, ${height - target_y - 30})`);
             piece.setAttribute("curr-y", `${height - target_y - 30}`);
+            piece.setAttribute("curr-x", `${width - target_x - 30}`);
         } else {
             piece.setAttribute("transform", `translate(${target_x}, ${target_y})`);
-            piece.setAttribute("curr-y", `${target_y}`);
+            piece.setAttribute("curr-y", target_y);
+            piece.setAttribute("curr-x", target_x);
         }
 
         // set piece's id to the new tile
