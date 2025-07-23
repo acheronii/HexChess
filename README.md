@@ -3,7 +3,7 @@ HexChess: A game of chess played on a Hexagonal board.
 Runs via a Python and Django backend and Javascript/SVG front end connected by WebSockets via Redis.
 
 ## How to access
-Available [online](hexchess-1.azurewebsites.net)
+Available [online](https://hexchess-1.azurewebsites.net)
 
 Alternatively, run locally:
     ```bash
