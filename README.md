@@ -1,5 +1,6 @@
 # HexChess
 HexChess: A game of chess played on a Hexagonal board.
+
 Runs via a Python and Django backend and Javascript/SVG front end connected by WebSockets via Redis.
 
 ## How to access
