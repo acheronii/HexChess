@@ -7,17 +7,17 @@ Runs via a Python and Django backend and Javascript/SVG front end connected by W
 Available [online](https://hexchess-1.azurewebsites.net)
 
 Alternatively, run locally:
-    ```
+
     git clone https://github.com/acheronii/HexChess.git
 
     cd HexChess
 
     docker compose up --build
-    ```
 
 Go to localhost:8000 in a browser to use the site locally.
 
 ## Acknowledgements
 Inspired by [this video](https://www.youtube.com/watch?v=bgR3yESAEVE) by CGP Grey
+
 
 
